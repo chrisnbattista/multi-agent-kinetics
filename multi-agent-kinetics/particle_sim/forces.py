@@ -6,6 +6,7 @@ def lennard_jones_potential(epsilon, omega, r):
 
 def pairwise_world_lennard_jones_potential(world, epsilon, omega):
     '''
+    Not timestep dependent as it is not time dependent as it is a potential field.
     '''
 
     # isolate particle position data
@@ -40,7 +41,9 @@ def pairwise_world_lennard_jones_potential(world, epsilon, omega):
     )
     
     # scale displacements by potentials
-    return np.sum(differences * potentials[:, :, np.newaxis], axis=1)
+    answer = np.sum(differences * potentials[:, :, np.newaxis], axis=1)
+    ##print(answer)
+    return answer
 
 def slow_pairwise_world_lennard_jones_potential(world, epsilon, omega):
     '''
@@ -56,3 +59,17 @@ def slow_pairwise_world_lennard_jones_potential(world, epsilon, omega):
             potential_matrix[j] += direction * magnitude
     
     return potential_matrix
+
+def viscous_damping_force(world, c):
+    '''
+    F_damping = -cv
+    '''
+
+    forces = -c * \
+        (
+            #np.multiply(
+                world[['v_1', 'v_2']].to_numpy()
+            #    np.abs(world[['v_1', 'v_2']])
+            #)
+        )
+    return forces
