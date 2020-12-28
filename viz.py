@@ -11,7 +11,7 @@ import seaborn as sns
 
 
 
-def setup_figure():
+def set_up_figure():
     plt.ion()
     plt.show()
     sns.set_theme()
