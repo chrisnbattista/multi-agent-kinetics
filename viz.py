@@ -32,6 +32,8 @@ def render_state(world, fig, ax, show_indicators=False, indicators=None, indicat
         axes object with one axis if show_indicators=False, two axes otherwise
     '''
 
+    ax[0].clear()
+
     p = sns.scatterplot(
             x=world[:,1],
             y=world[:,2],
