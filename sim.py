@@ -4,7 +4,7 @@
 
 
 
-from particle_sim import indicators, experiments, forces, integrators
+from . import indicators, experiments, forces, integrators
 import numpy as np
 import time, random
 

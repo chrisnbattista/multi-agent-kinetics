@@ -1,7 +1,7 @@
 import numpy as np
 import random, math
 
-def set_up_experiment(n_particles, radius, center=(0,0), min_dist=4, random_speed=10):
+def set_up_experiment(n_particles, radius, center=(0,0), min_dist=4, random_speed=0):
     '''
         n_particles:    initial number of particles []
         radius:         initial radius of particle distribution [m]
@@ -21,8 +21,8 @@ def set_up_experiment(n_particles, radius, center=(0,0), min_dist=4, random_spee
 
         smallest_interparticle_distance = 0
 
-        candidate_v_1 = (random.random() - 0.5) * random_speed
-        candidate_v_2 = (random.random() - 0.5) * random_speed
+        candidate_v_1 = random.random()
+        candidate_v_2 = random.random()
 
         while smallest_interparticle_distance < min_dist:
             theta = random.random() * 2 * math.pi
