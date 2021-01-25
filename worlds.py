@@ -1,11 +1,11 @@
-
+## TO DO: Remove explicit indexes, change to lookups from object schema
 
 
 
 
 
 import numpy as np
-from sfc.multi_agent_kinetics import experiments, integrators
+from hts.multi_agent_kinetics import experiments, integrators
 
 
 
@@ -23,96 +23,124 @@ schemas = {
 class World:
 
     def __init__(self,
+                initial_state=None,
                 spatial_dims=2,
                 n_agents=0,
                 n_timesteps=None,
-                timestep_length=0.01,
+                timestep=0.01,
                 forces=[],
                 indicators=[],
                 integrator=integrators.integrate_rect_world):
         '''
+        Create a new World object with fixed parameters: forces, indicators, fixed timestep, etc.
+        If n_timesteps is left as None, the World can run indefinitely (very inefficient).
         '''
 
         self.spatial_dims = spatial_dims
         self.schema = schemas[str(spatial_dims)+'d']
 
         self.n_timesteps = n_timesteps
-        self.current_timestep = 0
         if n_timesteps:
             self.fixed_length = True
             self.history = np.empty( (n_timesteps * n_agents, len(self.schema)))
+            self.indicator_history = np.empty( (n_timesteps, len(indicators)) )
         else:
             self.fixed_length = False
             self.history = np.empty( (0, len(self.schema)))
+            self.indicator_history = np.history( (0, len(indicators)) )
 
         self.n_agents = n_agents
-        # control actions is basically forces to be applied, originating from the agent
-        self.control_actions =  np.zeros( ( self.n_agents, self.spatial_dims ) )
 
         self.forces = forces
         self.indicators = indicators
         self.integrator = integrator
 
-        self.timestep_length = timestep_length
+        self.timestep_length = timestep
+
+        self.current_timestep = None
+        if initial_state is not None:
+            self._add_state_to_history(initial_state)     
     
-    def set_state(self, world_state):
+    def _add_state_to_history(self, new_state):
         '''
+        Adds the new_state to the state history of the world and advances the timestep by one.
+        '''
+
+        if self.current_timestep is None:
+            self.current_timestep = 0
+        else:
+            self.current_timestep += 1
+
+        if self.fixed_length:
+            self.history[
+                (self.current_timestep*self.n_agents) : ((self.current_timestep+1)*self.n_agents), :] = new_state
+        else:
+            self.history = np.concatenate((self.history, new_state))
+        
+        return self
+    
+    def _add_state_to_indicators(self, new_indicators):
+        '''
+        Concatenates new_indicators to the indicators timeseries at index self.current_timestep.
         '''
 
         if self.fixed_length:
-            self.history[self.current_timestep:self.current_timestep+self.n_agents, :] = world_state
+            self.indicator_history[self.current_timestep, :] = new_indicators
         else:
-            self.history = np.concatenate((self.history, world_state))
+            self.indicator_history = np.concatenate((self.indicator_history, new_indicators))
+        
+        return self
     
     def get_state(self):
         '''
+        Returns a view of the latest entry in the world state history.
         '''
 
-        return self.history[self.current_timestep - self.n_agents:, :]
+        if self.current_timestep is None:
+            return None
+
+        return self.history[(self.current_timestep*self.n_agents) : ((self.current_timestep+1)*self.n_agents), :]
     
-    def _set_indicators(self, indicators):
+    def get_full_history_with_indicators(self):
         '''
-        Not implemented yet.
+        Returns an array representing both state and indicators across entire time span.
         '''
-        pass
-
-    def add_force(self, force_function):
-        '''
-        '''
-
-        self.forces.append(force_function)
+        return \
+            np.concatenate(
+                (
+                    self.history,
+                    np.repeat(self.indicator_history, self.n_agents, axis=0)
+                ),
+                axis=1
+            )
     
-    def add_indicator(self, indicator_function):
+    def advance_state(self, steps=1):
         '''
-        '''
-
-        self.indicators.append(indicator_function)
-    
-    def add_control_actions(self):
-        '''
+        Advances the underlying world state by the specified number of time steps and records the state trajectory.
         '''
 
-        self.forces.append(self.apply_control_actions)
-    
-    def apply_control_actions(self, world):
-        '''
-        Function matching the specifications for multi-agent-kinetics.experiments to use as a force.
-        '''
+        for i in range(steps):
 
-        return self.control_actions
-    
-    def time_step(self):
-        '''
-        Advances the underlying world state by one time step.
-        '''
+            state = self.get_state().copy() # state is initially old state
 
-        new_state, new_indicators = experiments.advance_timestep(
-            world=self.get_state(),
-            timestep=self.timestep_length,
-            integrator=self.integrator,
-            forces=self.forces,
-            indicators=self.indicators
-        )
+            ## Calculate forces
+            # Initialize matrix to hold forces keyed to id
+            force_matrix = np.zeros ( (state.shape[0], 2) )
+            for force in self.forces:
+                force_matrix = force_matrix + force(state)
 
-        self.set_state(new_state)
-        self._set_indicators(new_indicators)
+            ## Advance the timestep itself
+            state[:,6] += self.timestep_length
+
+            ## Integrate forces over timestep
+            self.integrator(state, force_matrix, self.timestep_length)
+
+            # state is now new state, so append it to the history and advance the internal
+            # timestep counter
+            self._add_state_to_history(state)
+
+            ## Compute indicators
+            indicator_results = np.empty( (1, len(self.indicators)) )
+            for j in range(len(self.indicators)):
+                indicator_results[0, j] = self.indicators[j](state)
+            self._add_state_to_indicators(indicator_results)

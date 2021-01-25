@@ -1,1 +1,1 @@
-__all__ = ['experiments', 'integrators', 'kernels', 'forces', 'indicators', 'sim', 'exploration']
+__all__ = ['experiments', 'integrators', 'kernels', 'forces', 'indicators', 'sim', 'exploration', 'serialize']

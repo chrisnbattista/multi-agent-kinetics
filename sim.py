@@ -4,18 +4,51 @@
 
 
 
-from . import indicators, experiments, forces, integrators
+from . import indicators, experiments, forces, integrators, worlds
 import numpy as np
 import time, random
 
 
 
 
-
-
-def run_sim(params, seed):
+def run_random_circle_lj_sim(params, seed):
+    '''
+    Sets up a random experiment using the random seed and params and runs it to completion.
+    '''
 
     random.seed(seed)
+
+    ## ICs
+    initial_state = experiments.initialize_random_circle(
+        radius=params['size']/2,
+        center=(params['size']/2, params['size']/2),
+        n_particles=params['n_agents'],
+        min_dist=params['min_dist'],
+        random_speed=params['init_speed'])
+
+    ## Create World object
+    world = worlds.World(
+        initial_state=initial_state,
+        n_agents=params['n_agents'],
+        n_timesteps=params['n_timesteps'],
+        timestep=params['timestep'],
+        forces=[lambda world: forces.pairwise_world_lennard_jones_force(world, epsilon=params['epsilon'], sigma=params['sigma'])]
+    )
+    
+    ## Forward run
+    world.advance_state(params['n_timesteps']-1)
+    
+    return world
+
+
+
+
+### FOR REFERENCE ONLY - ORIGINAL IMPLEMENTATION
+def run_from_ic(world, params):
+    '''
+    DEPRECATED
+    Given an initial system state, runs the simulation forward from that state.
+    '''
 
     start_time = time.time()
     last_loop_time = start_time
@@ -27,14 +60,6 @@ def run_sim(params, seed):
     ]
 
     n_indicators = len(indicator_functions)
-
-    ## ICs
-    world = experiments.set_up_experiment(
-        radius=params['size']/2,
-        center=(params['size']/2, params['size']/2),
-        n_particles=params['n_particles'],
-        min_dist=params['min_dist'],
-        random_speed=params['init_speed'])
 
     long_world_history = np.empty( (int(params['n_steps'] * params['n_particles'] / params['record_sparsity']), 7) )
     long_indicator_history = np.empty( (int(params['n_steps'] / params['record_sparsity']), n_indicators + 1) )
