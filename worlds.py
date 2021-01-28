@@ -128,6 +128,14 @@ class World:
             force_matrix = np.zeros ( (state.shape[0], 2) )
             for force in self.forces:
                 force_matrix = force_matrix + force(state)
+                '''
+                convert world state to pairwise distances
+                corrupt pairwise distances (sensor emulation, likely gaussian noise)
+                corrupt world state (positions) (gaussian noise, GPS)
+                call hcl routine with corrupted pairwise distances, positions (on mothership)
+                get back estimated world state
+                apply sph (centralized) on estimated world state
+                '''
 
             ## Advance the timestep itself
             state[:,6] += self.timestep_length

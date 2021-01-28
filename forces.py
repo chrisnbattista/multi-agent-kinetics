@@ -3,6 +3,8 @@ import scipy
 import numexpr as ne
 from sklearn.preprocessing import normalize
 
+from hts.multi_agent_kinetics import properties, kernels
+
 def lennard_jones_potential(epsilon, sigma, r):
     return ne.evaluate('( (4 * epsilon * sigma**12)/r**12 - (4 * epsilon * sigma**6)/r**6 )')
 
@@ -101,3 +103,45 @@ def sum_world_gravity_potential(world, lamb, **kwargs):
     G = np.sum( np.abs( 0.5 * lamb * np.linalg.norm(world[:, 1:3], axis=1)**2 / world[:, 3] ) )
     ##print(G)
     return G
+
+
+def pressure_force(i, state):
+    '''
+    Computes the pressure force for one particle from the world state
+    i = particle index
+    state = world state matrix
+    '''
+
+    densities = properties.density_all(state)
+
+    # isolate particle position data
+    coords = world[:,1:3]
+    p_dists = scipy.spatial.distance.pdist(coords)
+    dists_i = scipy.spatial.distance.squareform(
+        p_dists
+    )[:,i]
+
+    # HARDCODED MASS, PRESSURE
+    pressures = 100 * ( 1/densities[i]**2 + np.full(state.shape[0], 1) / pressures**2 )
+    return np.sum(-1 * pressures * kernels.cubic_spline_grad(q=dists_i))
+
+
+def viscosity_force(i, state, nu=1):
+    '''
+    Computes the viscosity force for one particle from the world state
+    i = particle index
+    state = world state matrix
+    '''
+
+    densities = properties.density_all(state)
+
+    # isolate particle position data
+    coords = world[:,1:3]
+    p_dists = scipy.spatial.distance.pdist(coords)
+    dists_i = scipy.spatial.distance.squareform(
+        p_dists
+    )[:,i]
+
+    velocities = world[:, 3:5] # finish
+
+    return nu * np.sum(10 * math.abs(velocities - velocities[i])/densities * kernels.cubic_spline_grad_double(dists_i)
