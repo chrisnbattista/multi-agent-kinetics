@@ -4,7 +4,7 @@
 
 
 
-from particle_sim import indicators, experiments, forces, integrators
+from sfc.multi_agent_kinetics import indicators, experiments, forces, integrators
 import numpy as np
 import time, random
 

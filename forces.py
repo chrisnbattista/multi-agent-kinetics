@@ -1,7 +1,14 @@
+
+
+
+
+
+
 import numpy as np
 import scipy
 import numexpr as ne
 from sklearn.preprocessing import normalize
+from sfc.multi_agent_kinetics import properties
 
 def lennard_jones_potential(epsilon, sigma, r):
     return ne.evaluate('( (4 * epsilon * sigma**12)/r**12 - (4 * epsilon * sigma**6)/r**6 )')
@@ -101,3 +108,54 @@ def sum_world_gravity_potential(world, lamb, **kwargs):
     G = np.sum( np.abs( 0.5 * lamb * np.linalg.norm(world[:, 1:3], axis=1)**2 / world[:, 3] ) )
     ##print(G)
     return G
+
+
+### SPH Section
+
+def F_pressure(world, d_kernel, h):
+    '''
+    '''
+
+    ## Accumulator
+    F_p = np.zeros((world.shape[0],2))
+
+    ## Rho
+    densities = np.zeros((world.shape[0], 1))
+    for i in range(world.shape[0]):
+        densities[i] = properties.density(world, i, h)
+    
+    ## r
+    p_dists = scipy.spatial.distance.squareform(scipy.spatial.distance.pdist(coords))
+
+    ## F_p
+    for i in range(world.shape[0]):
+        for j in range(world.shape[0]):
+            if i == j: continue
+            F_p[i] += \
+                world[i, 3] * world[j, 3] \
+                * (densities[i] / densities[j]**2 + densities[j] / densities[j]**2) \
+                * d_kernel(p_dists[i,j], h)
+    
+    return F_p
+
+def F_viscosity(world, dd_kernel, h, eta, visc):
+    '''
+    '''
+
+    ## Accumulator
+    F_v = np.zeros((world.shape[0],2))
+    
+    ## r
+    p_dists = scipy.spatial.distance.squareform(scipy.spatial.distance.pdist(coords))
+
+    ## F_v
+    for i in range(world.shape[0]):
+        for j in range(world.shape[0]):
+            if i == j: continue
+            F_p[i] += \
+                world[i, 3] * world[j, 3] \
+                * (densities[i] / densities[j]**2 + densities[j] / densities[j]**2) \
+                * d_kernel(p_dists[i,j], h)
+    
+    ## eta
+    return F_v * eta
