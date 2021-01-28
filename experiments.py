@@ -1,7 +1,18 @@
+
+
+
+
+
+
 import numpy as np
 import random, math
 
-def set_up_experiment(n_particles, radius, center=(0,0), min_dist=4, random_speed=10):
+
+
+
+
+
+def initialize_random_circle(n_particles, radius, center=(0,0), min_dist=4, random_speed=0):
     '''
         n_particles:    initial number of particles []
         radius:         initial radius of particle distribution [m]
@@ -21,8 +32,8 @@ def set_up_experiment(n_particles, radius, center=(0,0), min_dist=4, random_spee
 
         smallest_interparticle_distance = 0
 
-        candidate_v_1 = (random.random() - 0.5) * random_speed
-        candidate_v_2 = (random.random() - 0.5) * random_speed
+        candidate_v_1 = random.random() * random_speed
+        candidate_v_2 = random.random() * random_speed
 
         while smallest_interparticle_distance < min_dist:
             theta = random.random() * 2 * math.pi
@@ -39,31 +50,3 @@ def set_up_experiment(n_particles, radius, center=(0,0), min_dist=4, random_spee
         world_state[i, :] = (i, candidate_b_1, candidate_b_2, 10, candidate_v_1, candidate_v_2, 0)
 
     return world_state
-
-def advance_timestep(world, timestep, integrator, forces=[], indicators=[]):
-    '''
-        world:              state machine dataframe containing all particles [pd.Dataframe]
-        timestep:           length of time to integrate over [s]
-        pairwise_forces:    potentials to be calculated between each unique pair of particles and applied as forces
-    '''
-
-    ## Calculate forces
-
-    # Initialize matrix to hold forces keyed to id
-    force_matrix = np.zeros ( (world.shape[0], 2) )
-
-    for force in forces:
-        force_matrix = force_matrix + force(world)
-
-    ## Advance the timestep itself
-    world[:,6] += timestep
-
-    ## Integrate forces over timestep
-    integrator(world, force_matrix, timestep)
-
-    ## Compute indicators
-    indicator_results = np.empty( (1, len(indicators)) )
-    for i in range(len(indicators)):
-        indicator_results[0, i] = indicators[i](world)
-
-    return world, indicator_results
