@@ -8,9 +8,7 @@ import numpy as np
 import scipy
 import numexpr as ne
 from sklearn.preprocessing import normalize
-from sfc.multi_agent_kinetics import properties
-
-from hts.multi_agent_kinetics import properties, kernels
+from . import properties, kernels
 
 def lennard_jones_potential(epsilon, sigma, r):
     return ne.evaluate('( (4 * epsilon * sigma**12)/r**12 - (4 * epsilon * sigma**6)/r**6 )')
@@ -161,6 +159,7 @@ def F_viscosity(world, dd_kernel, h, eta, visc):
     
     ## eta
     return F_v * eta
+
 def pressure_force(i, state):
     '''
     Computes the pressure force for one particle from the world state
@@ -171,16 +170,54 @@ def pressure_force(i, state):
     densities = properties.density_all(state)
 
     # isolate particle position data
-    coords = world[:,1:3]
+    coords = state[:,1:3]
     p_dists = scipy.spatial.distance.pdist(coords)
     dists_i = scipy.spatial.distance.squareform(
         p_dists
     )[:,i]
+    print("distances")
+    print(dists_i)
 
+    # https://lucasschuermann.com/writing/implementing-sph-in-2d
     # HARDCODED MASS, PRESSURE
-    pressures = 100 * ( 1/densities[i]**2 + np.full(state.shape[0], 1) / pressures**2 )
-    return np.sum(-1 * pressures * kernels.cubic_spline_grad(q=dists_i))
+    mass = 10
+    pressures = np.full(state.shape[0], 0.00001)
 
+    # m * p / rho matrix
+    pairwise_force_mags = np.nan_to_num(
+        np.multiply(
+            -1 * \
+            mass**2 * \
+            (pressures / densities**2) + (pressures[i] / densities[i]**2),
+            [kernels.cubic_spline_grad(d) for d in dists_i]
+        )
+    )
+
+    print("pairwise force mags")
+    print(pairwise_force_mags)
+
+    differences = (coords[:, np.newaxis] - coords)[i]
+    print(differences)
+    forces = differences * pairwise_force_mags[:, None]
+    
+    return np.sum(
+        np.delete(
+            forces,
+            i
+        )
+    )
+
+def world_pressure_force(world):
+    '''
+    Apply the pressure force to all particles.
+    '''
+    force_accumulator = np.zeros((world.shape[0], 2))
+    for i in range(world.shape[0]):
+        force_accumulator[i,:] += pressure_force(i, world)
+    
+    print("forces")
+    print(force_accumulator)
+    return force_accumulator
 
 def viscosity_force(i, state, nu=1):
     '''
@@ -192,12 +229,57 @@ def viscosity_force(i, state, nu=1):
     densities = properties.density_all(state)
 
     # isolate particle position data
-    coords = world[:,1:3]
+    coords = state[:,1:3]
     p_dists = scipy.spatial.distance.pdist(coords)
     dists_i = scipy.spatial.distance.squareform(
         p_dists
     )[:,i]
+    print("distances")
+    print(dists_i)
 
-    velocities = world[:, 3:5] # finish
+    # https://lucasschuermann.com/writing/implementing-sph-in-2d
+    # HARDCODED MASS, PRESSURE
+    mass = 10
+    nu = 1
 
-    return nu * np.sum(10 * math.abs(velocities - velocities[i])/densities * kernels.cubic_spline_grad_double(dists_i)
+    velocities = np.linalg.norm(state[:, 3:5], axis=1)
+
+    # m * p / rho matrix
+    pairwise_force_mags = np.nan_to_num(
+        np.multiply(
+            nu * \
+            mass * \
+            np.abs(velocities - velocities[i]) / densities,
+            [kernels.cubic_spline_grad_double(d) for d in dists_i]
+        )
+    )
+
+    print("pairwise force mags")
+    print(pairwise_force_mags)
+
+    differences = (coords[:, np.newaxis] - coords)[i]
+    print(differences)
+    forces = differences * pairwise_force_mags[:, None]
+    
+    return np.sum(
+        np.delete(
+            forces,
+            i
+        )
+    )
+
+     # finish
+
+    return nu * np.sum(10 * math.abs(velocities - velocities[i])/densities * kernels.cubic_spline_grad_double(dists_i))
+
+def world_viscosity_force(world):
+    '''
+    Apply the viscosity force to all particles.
+    '''
+    force_accumulator = np.zeros((world.shape[0], 2))
+    for i in range(world.shape[0]):
+        force_accumulator[i,:] += viscosity_force(i, world)
+    
+    print("forces")
+    print(force_accumulator)
+    return force_accumulator

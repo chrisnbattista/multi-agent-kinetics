@@ -11,7 +11,7 @@ from typing import Dict, Any
 import hashlib
 import json
 
-from hts.multi_agent_kinetics import worlds, forces
+from . import worlds, forces
 
 def dict_hash(dictionary: Dict[str, Any]) -> str:
     """MD5 hash of a dictionary.

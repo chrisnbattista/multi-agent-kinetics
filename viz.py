@@ -16,14 +16,16 @@ import itertools
 
 
 
-def set_up_figure():
+def set_up_figure(title='Plot'):
     plt.ion()
     plt.show()
     sns.set_theme()
-    return plt.subplots(2,1,
+    fig, ax = plt.subplots(2,1,
                         gridspec_kw={'height_ratios': [4, 1]},
                         figsize=(7.5, 9)
     )
+    fig.canvas.set_window_title(title)
+    return fig, ax
 
 def trace_trajectories(world, fig, ax, fig_title=''):
     '''
@@ -51,7 +53,15 @@ def trace_trajectories(world, fig, ax, fig_title=''):
     fig.canvas.start_event_loop(0.01)
 
 
-def render_state(world, fig, ax, show_indicators=False, indicators=None, indicator_labels=None, fig_title=''):
+def render_state(world,
+                    fig,
+                    ax,
+                    show_indicators=False,
+                    indicators=None,
+                    indicator_labels=None,
+                    fig_title=None,
+                    agent_colors=None,
+                    agent_sizes=None):
     '''
     Display the particles described in the world array onto the figure and axis provided.
     Activates the plt event loop so that the figure is displayed.
@@ -68,7 +78,8 @@ def render_state(world, fig, ax, show_indicators=False, indicators=None, indicat
     p = sns.scatterplot(
             x=world[:,1],
             y=world[:,2],
-            color='k',
+            c=agent_colors,
+            s=agent_sizes,
             ax=ax[0]
     )
 
@@ -86,7 +97,8 @@ def render_state(world, fig, ax, show_indicators=False, indicators=None, indicat
         if indicator_labels:
             plt.legend(loc='lower right', labels=indicator_labels)
     
-    fig.canvas.set_window_title(fig_title)
+    if fig_title != None:
+        fig.canvas.set_window_title(fig_title)
     # if not len(fig.texts):
     #     fig.text(0.01, 0.01, note)
     # else:

@@ -5,7 +5,7 @@
 
 
 import numpy as np
-from hts.multi_agent_kinetics import experiments, integrators
+from . import experiments, integrators
 
 
 
@@ -47,7 +47,7 @@ class World:
         else:
             self.fixed_length = False
             self.history = np.empty( (0, len(self.schema)))
-            self.indicator_history = np.history( (0, len(indicators)) )
+            self.indicator_history = np.empty( (0, len(indicators)) )
 
         self.n_agents = n_agents
 

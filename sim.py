@@ -4,7 +4,7 @@
 
 
 
-from sfc.multi_agent_kinetics import indicators, experiments, forces, integrators, worlds
+from . import indicators, experiments, forces, integrators, worlds
 import numpy as np
 import time, random
 
