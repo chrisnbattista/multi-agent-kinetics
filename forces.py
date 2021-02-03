@@ -110,123 +110,73 @@ def sum_world_gravity_potential(world, lamb, **kwargs):
     return G
 
 
-### SPH Section
-
-def F_pressure(world, d_kernel, h):
-    '''
-    '''
-
-    ## Accumulator
-    F_p = np.zeros((world.shape[0],2))
-
-    ## Rho
-    densities = np.zeros((world.shape[0], 1))
-    for i in range(world.shape[0]):
-        densities[i] = properties.density(world, i, h)
-    
-    ## r
-    p_dists = scipy.spatial.distance.squareform(scipy.spatial.distance.pdist(coords))
-
-    ## F_p
-    for i in range(world.shape[0]):
-        for j in range(world.shape[0]):
-            if i == j: continue
-            F_p[i] += \
-                world[i, 3] * world[j, 3] \
-                * (densities[i] / densities[j]**2 + densities[j] / densities[j]**2) \
-                * d_kernel(p_dists[i,j], h)
-    
-    return F_p
-
-def F_viscosity(world, dd_kernel, h, eta, visc):
-    '''
-    '''
-
-    ## Accumulator
-    F_v = np.zeros((world.shape[0],2))
-    
-    ## r
-    p_dists = scipy.spatial.distance.squareform(scipy.spatial.distance.pdist(coords))
-
-    ## F_v
-    for i in range(world.shape[0]):
-        for j in range(world.shape[0]):
-            if i == j: continue
-            F_p[i] += \
-                world[i, 3] * world[j, 3] \
-                * (densities[i] / densities[j]**2 + densities[j] / densities[j]**2) \
-                * d_kernel(p_dists[i,j], h)
-    
-    ## eta
-    return F_v * eta
-
-def pressure_force(i, state):
+def pressure_force(i, state, h=1):
     '''
     Computes the pressure force for one particle from the world state
     i = particle index
     state = world state matrix
+    returns: [force_x, force_y]
     '''
 
-    densities = properties.density_all(state)
+    densities = properties.density_all(state, h=5)
+    active_rows = (densities != 0)
 
     # isolate particle position data
     coords = state[:,1:3]
     p_dists = scipy.spatial.distance.pdist(coords)
     dists_i = scipy.spatial.distance.squareform(
         p_dists
-    )[:,i]
-    print("distances")
-    print(dists_i)
+    )[:,i][active_rows]
+    k_vals = [kernels.cubic_spline_grad(d, h=h) for d in dists_i]
+    pairwise_force_mags = np.zeros(state.shape[0])
+    if all(k == 0 for k in k_vals): return np.zeros((2,))
 
     # https://lucasschuermann.com/writing/implementing-sph-in-2d
-    # HARDCODED MASS, PRESSURE
-    mass = 10
-    pressures = np.full(state.shape[0], 0.00001)
+    # HARDCODED PRESSURE
+    pressures = np.full(state.shape[0], 0.000001).T
+
+    
 
     # m * p / rho matrix
-    pairwise_force_mags = np.nan_to_num(
+    pairwise_force_mags[active_rows] = np.nan_to_num(
         np.multiply(
             -1 * \
-            mass**2 * \
-            (pressures / densities**2) + (pressures[i] / densities[i]**2),
-            [kernels.cubic_spline_grad(d) for d in dists_i]
-        )
+            state[:,3][active_rows]**2 * \
+            (pressures[active_rows] / densities[active_rows]**2) + (pressures[i] / densities[i]**2),
+            k_vals
+        ),
+        neginf=0,
+        posinf=0
     )
 
-    print("pairwise force mags")
-    print(pairwise_force_mags)
+    directions = normalize((coords[:, np.newaxis] - coords)[i], axis=1)
+    forces = np.dot(pairwise_force_mags, directions)
 
-    differences = (coords[:, np.newaxis] - coords)[i]
-    print(differences)
-    forces = differences * pairwise_force_mags[:, None]
+    #if np.any(forces > 100):
+        #print(f'mass: {state[:,3][active_rows]}; densities: {densities[active_rows]}')
+    #     print("ALERT")
+    #     print(f'pressure: {pressures}\ndirections: {directions}\nforces: {forces}')
     
-    return np.sum(
-        np.delete(
-            forces,
-            i
-        )
-    )
+    return forces
 
-def world_pressure_force(world):
+def world_pressure_force(world, h=1):
     '''
     Apply the pressure force to all particles.
     '''
     force_accumulator = np.zeros((world.shape[0], 2))
     for i in range(world.shape[0]):
-        force_accumulator[i,:] += pressure_force(i, world)
+        force_accumulator[i,:] += pressure_force(i, world, h=h)
     
-    print("forces")
-    print(force_accumulator)
     return force_accumulator
 
-def viscosity_force(i, state, nu=1):
+def viscosity_force(i, state, nu=0.0001, h=1):
     '''
     Computes the viscosity force for one particle from the world state
     i = particle index
     state = world state matrix
     '''
 
-    densities = properties.density_all(state)
+    densities = properties.density_all(state, h=h)
 
     # isolate particle position data
     coords = state[:,1:3]
@@ -234,13 +184,8 @@ def viscosity_force(i, state, nu=1):
     dists_i = scipy.spatial.distance.squareform(
         p_dists
     )[:,i]
-    print("distances")
-    print(dists_i)
 
     # https://lucasschuermann.com/writing/implementing-sph-in-2d
-    # HARDCODED MASS, PRESSURE
-    mass = 10
-    nu = 1
 
     velocities = np.linalg.norm(state[:, 3:5], axis=1)
 
@@ -248,17 +193,13 @@ def viscosity_force(i, state, nu=1):
     pairwise_force_mags = np.nan_to_num(
         np.multiply(
             nu * \
-            mass * \
+            state[:,3] * \
             np.abs(velocities - velocities[i]) / densities,
-            [kernels.cubic_spline_grad_double(d) for d in dists_i]
+            [kernels.cubic_spline_grad_double(d, h=h) for d in dists_i]
         )
     )
 
-    print("pairwise force mags")
-    print(pairwise_force_mags)
-
     differences = (coords[:, np.newaxis] - coords)[i]
-    print(differences)
     forces = differences * pairwise_force_mags[:, None]
     
     return np.sum(
@@ -268,18 +209,12 @@ def viscosity_force(i, state, nu=1):
         )
     )
 
-     # finish
-
-    return nu * np.sum(10 * math.abs(velocities - velocities[i])/densities * kernels.cubic_spline_grad_double(dists_i))
-
-def world_viscosity_force(world):
+def world_viscosity_force(world, h=1):
     '''
     Apply the viscosity force to all particles.
     '''
     force_accumulator = np.zeros((world.shape[0], 2))
     for i in range(world.shape[0]):
-        force_accumulator[i,:] += viscosity_force(i, world)
+        force_accumulator[i,:] += viscosity_force(i, world, h=h)
     
-    print("forces")
-    print(force_accumulator)
     return force_accumulator
