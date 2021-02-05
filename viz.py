@@ -53,7 +53,7 @@ def trace_trajectories(world, fig, ax, fig_title=''):
     fig.canvas.start_event_loop(0.01)
 
 
-def render_state(world,
+def render_2d_orbit_state(world,
                     fig,
                     ax,
                     show_indicators=False,
@@ -76,8 +76,8 @@ def render_state(world,
     ax[0].clear()
 
     p = sns.scatterplot(
-            x=world[:,1],
-            y=world[:,2],
+            x=world[:,3],
+            y=world[:,4],
             c=agent_colors,
             s=agent_sizes,
             ax=ax[0]
