@@ -102,7 +102,7 @@ def gravity_well(world, lamb, **kwargs):
     '''
 
     if world.shape[1] == 7:
-        return -lamb / world[:, 3, None] * world[:, 3:4]
+        return -lamb / world[:, 2, None] * world[:, 3:5]
     elif world.shape[1] == 5:
         return (-lamb / world[:, 2] * world[:, 3])[:, np.newaxis]
 
@@ -116,7 +116,7 @@ def sum_world_gravity_potential(world, lamb, **kwargs):
     return G
 
 
-def pressure_force(i, state, h=1):
+def pressure_force(i, state, pressure, h=1):
     '''
     Computes the pressure force for one particle from the world state
     i = particle index
@@ -124,12 +124,12 @@ def pressure_force(i, state, h=1):
     returns: [force_x, force_y]
     '''
 
-    densities = properties.density_all(state, h=5)
+    densities = properties.density_all(state, h=h)
     active_rows = (densities != 0)
 
     # isolate particle position data
     if state.shape[1] == 7:
-        coords = state[:,1:3]
+        coords = state[:,3:5]
         spatial_dims = 2
         p_dists = scipy.spatial.distance.pdist(coords)
     else:
@@ -146,8 +146,7 @@ def pressure_force(i, state, h=1):
     if all(k == 0 for k in k_vals): return np.zeros((spatial_dims,))
 
     # https://lucasschuermann.com/writing/implementing-sph-in-2d
-    # HARDCODED PRESSURE
-    pressures = np.full(state.shape[0], 0.000001).T
+    pressures = np.full(state.shape[0], pressure).T
 
     
 
@@ -176,7 +175,7 @@ def pressure_force(i, state, h=1):
         )
     return forces
 
-def world_pressure_force(world, h=1):
+def world_pressure_force(world, pressure, h=1):
     '''
     Apply the pressure force to all particles.
     '''
@@ -184,7 +183,7 @@ def world_pressure_force(world, h=1):
     else: spatial_dims = 1
     force_accumulator = np.zeros((world.shape[0], spatial_dims))
     for i in range(world.shape[0]):
-        force_accumulator[i,:] += pressure_force(i, world, h=h)
+        force_accumulator[i,:] += pressure_force(i, world, pressure, h=h)
     
     return force_accumulator
 
