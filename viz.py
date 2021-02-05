@@ -107,6 +107,69 @@ def render_state(world,
     fig.canvas.draw_idle()
     fig.canvas.start_event_loop(0.01)
 
+def render_1d_orbit_state(sample_data,
+                    fig,
+                    ax,
+                    show_indicators=False,
+                    indicators=None,
+                    indicator_labels=None,
+                    fig_title=None,
+                    agent_colors=None,
+                    agent_sizes=None):
+
+    ax[0].clear()
+
+    sns.lineplot(x = [sample_data[0, 2], sample_data[4,2]], y = [0, 0], color = 'g', ax = ax[0])
+
+    p = sns.scatterplot(
+            x=sample_data[:,2],
+            y=[0]*5,
+            c=agent_colors,
+            s=agent_sizes,
+            ax=ax[0]
+    )
+
+    # control x and y limits
+    p.set_xlim([sample_data[0, 2] -50, sample_data[4,2] + 50])
+    p.set_ylim([-50, 50])
+
+    # 2/3/21 stuff
+    # data = np.array([
+    #     [-1, 0],
+    #     [-0.5, 0],
+    #     [0, 0],
+    #     [0.5, 0],
+    #     [1, 0],
+    # ])
+
+    # color = ['k', 'k', 'k', 'k', 'b']
+    
+    # sns.scatterplot(data[:, 0], data[:, 1], c = color, ax = ax[0])
+
+    if show_indicators and indicators:
+        n_indicators = indicators.shape[1]
+        ax[1].clear()
+        for ind in range(1, n_indicators+1):
+            sns.lineplot(
+                x=indicators[:i, 0],
+                y=indicators[:i, ind],
+                ax=ax[1],
+                legend=False
+            )
+        
+    if indicator_labels:
+        plt.legend(loc='lower right', labels=indicator_labels)
+    
+    if fig_title != None:
+        fig.canvas.set_window_title(fig_title)
+    # if not len(fig.texts):
+    #     fig.text(0.01, 0.01, note)
+    # else:
+    #     fig.texts[0].set_text(note)
+
+    fig.canvas.draw_idle()
+    fig.canvas.start_event_loop(0.01)
+
 def generate_cost_plot(model,
                         data,
                         criterion,
