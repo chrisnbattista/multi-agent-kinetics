@@ -107,7 +107,7 @@ def render_state(world,
     fig.canvas.draw_idle()
     fig.canvas.start_event_loop(0.01)
 
-def render_1d_orbit_state(sample_data,
+def render_1d_orbit_state(world,
                     fig,
                     ax,
                     show_indicators=False,
@@ -119,10 +119,10 @@ def render_1d_orbit_state(sample_data,
 
     ax[0].clear()
 
-    sns.lineplot(x = [sample_data[0, 2], sample_data[4,2]], y = [0, 0], color = 'g', ax = ax[0])
+    sns.lineplot(x = [world[0, 2], world[4,2]], y = [0, 0], color = 'g', ax = ax[0])
 
     p = sns.scatterplot(
-            x=sample_data[:,2],
+            x=world[:,2],
             y=[0]*5,
             c=agent_colors,
             s=agent_sizes,
@@ -130,7 +130,7 @@ def render_1d_orbit_state(sample_data,
     )
 
     # control x and y limits
-    p.set_xlim([sample_data[0, 2] -50, sample_data[4,2] + 50])
+    p.set_xlim([world[0, 2] -50, world[4,2] + 50])
     p.set_ylim([-50, 50])
 
     # 2/3/21 stuff
