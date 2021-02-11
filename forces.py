@@ -37,7 +37,7 @@ def pairwise_world_lennard_jones_force(world, epsilon, sigma, **kwargs):
     '''
 
     # isolate particle position data
-    coords = world[:,1:3]
+    coords = world[:,3:5]
 
     # calculate pairwise forces and distances
     p_dists = scipy.spatial.distance.pdist(coords)

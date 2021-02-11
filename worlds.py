@@ -32,7 +32,8 @@ class World:
                 forces=[],
                 indicators=[],
                 integrator=integrators.integrate_rect_world,
-                context=None):
+                context=None,
+                **kwargs):
         '''
         Create a new World object with fixed parameters: forces, indicators, fixed timestep, etc.
         If n_timesteps is left as None, the World can run indefinitely (very inefficient).
@@ -77,9 +78,9 @@ class World:
 
         if self.fixed_length:
             self.history[
-                (self.current_timestep*self.n_agents) : ((self.current_timestep+1)*self.n_agents), :] = new_state
+                (self.current_timestep*self.n_agents) : (self.current_timestep*self.n_agents + self.n_agents), :] = new_state
         else:
-            self.history = np.concatenate((self.history, new_state))
+            self.history = np.concatenate((self.history, new_state), axis=0)
         
         return self
     
@@ -105,6 +106,9 @@ class World:
 
         return self.history[(self.current_timestep*self.n_agents) : ((self.current_timestep+1)*self.n_agents), :]
     
+    def get_history(self):
+        return self.history
+    
     def get_full_history_with_indicators(self):
         '''
         Returns an array representing both state and indicators across entire time span.
@@ -125,8 +129,7 @@ class World:
 
         for i in range(steps):
 
-            state = self.get_state().copy() # state is initially old state
-
+            state = np.copy(self.get_state()) # state is initially old state
             ## Calculate forces
             # Initialize matrix to hold forces keyed to id
             force_matrix = np.zeros ( (state.shape[0], self.spatial_dims) )

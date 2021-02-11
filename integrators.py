@@ -25,11 +25,10 @@ def integrate_rect_world(world, force_matrix, timestep):
     # Velocity from force
     # F = ma = m * derivative(v)
     # v = integral(F) / m
-
     velocity_matrix = np.divide(
         integrate_rect(timestep, force_matrix),
-        10
-     ) # MUST FIX - constant mass
+        world[:,2,None]
+    )
     world[:, vel_idx] += velocity_matrix
 
     # Displacement from velocity
