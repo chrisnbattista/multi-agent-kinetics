@@ -31,7 +31,8 @@ class World:
                 timestep=0.01,
                 forces=[],
                 indicators=[],
-                integrator=integrators.integrate_rect_world):
+                integrator=integrators.integrate_rect_world,
+                context=None):
         '''
         Create a new World object with fixed parameters: forces, indicators, fixed timestep, etc.
         If n_timesteps is left as None, the World can run indefinitely (very inefficient).
@@ -57,6 +58,8 @@ class World:
         self.integrator = integrator
 
         self.timestep_length = timestep
+
+        self.context = context
 
         self.current_timestep = None
         if initial_state is not None:
@@ -128,7 +131,7 @@ class World:
             # Initialize matrix to hold forces keyed to id
             force_matrix = np.zeros ( (state.shape[0], self.spatial_dims) )
             for force in self.forces:
-                force_matrix = force_matrix + force(state)
+                force_matrix = force_matrix + force(state, self.context)
                 '''
                 convert world state to pairwise distances
                 corrupt pairwise distances (sensor emulation, likely gaussian noise)
