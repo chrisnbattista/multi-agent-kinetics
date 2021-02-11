@@ -1,10 +1,6 @@
 # code continuous Gaussian kernel function
 # goal: effectively make interactions local, weighting by distance essentially
 
-
-
-### DEPRECATED - Using SciPy now
-
 import math
 
 def cubic_spline(r, sigma=None, h=1):
@@ -15,7 +11,8 @@ def cubic_spline(r, sigma=None, h=1):
     r = r_1 - r_2 (scalar distance)
     '''
 
-    sigma = 10/(7*math.pi*h**2)
+    if sigma == None:
+        sigma = 10/(7*math.pi*h**2)
 
     if r > 2*h:
         return 0
@@ -32,7 +29,8 @@ def cubic_spline_grad(r, sigma=None, h=1):
     r = r_1 - r_2 (scalar distance)
     '''
 
-    sigma = 10/(7*math.pi*h**2)
+    if sigma == None:
+        sigma = 10/(7*math.pi*h**2)
 
     if r > 2*h:
         return 0
@@ -49,7 +47,8 @@ def cubic_spline_grad_double(r, sigma=None, h=1):
     r = r_1 - r_2 (scalar distance)
     '''
 
-    sigma = 10/(7*math.pi*h**2)
+    if sigma == None:
+        sigma = 10/(7*math.pi*h**2)
 
     if r > 2*h:
         return 0

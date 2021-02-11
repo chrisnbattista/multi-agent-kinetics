@@ -28,7 +28,7 @@ def sum_world_lennard_jones_potential(world, epsilon, sigma):
     return np.sum(lennard_jones_potential(epsilon, sigma, p_dists))
 
 
-def lennard_jones_force(epsilon, sigma, r):
+def lennard_jones_force(epsilon, sigma, r, context=None):
     return ne.evaluate('24 * epsilon / r * ( (2)*(sigma/r)**12 - (sigma/r)**6 )')
 
 
@@ -37,7 +37,7 @@ def pairwise_world_lennard_jones_force(world, epsilon, sigma, **kwargs):
     '''
 
     # isolate particle position data
-    coords = world[:,1:3]
+    coords = world[:,3:5]
 
     # calculate pairwise forces and distances
     p_dists = scipy.spatial.distance.pdist(coords)
@@ -116,7 +116,7 @@ def sum_world_gravity_potential(world, lamb, **kwargs):
     return G
 
 
-def pressure_force(i, state, pressure, h=1):
+def pressure_force(i, state, pressure, h=1, context=None):
     '''
     Computes the pressure force for one particle from the world state
     i = particle index
@@ -175,7 +175,7 @@ def pressure_force(i, state, pressure, h=1):
         )
     return forces
 
-def world_pressure_force(world, pressure, h=1):
+def world_pressure_force(world, pressure, h=1, context=None):
     '''
     Apply the pressure force to all particles.
     '''
@@ -187,7 +187,7 @@ def world_pressure_force(world, pressure, h=1):
     
     return force_accumulator
 
-def viscosity_force(i, state, nu=0.0001, h=1):
+def viscosity_force(i, state, nu=0.0001, h=1, context=None):
     '''
     Computes the viscosity force for one particle from the world state
     i = particle index
@@ -226,7 +226,7 @@ def viscosity_force(i, state, nu=0.0001, h=1):
         )
     )
 
-def world_viscosity_force(world, h=1):
+def world_viscosity_force(world, h=1, context=None):
     '''
     Apply the viscosity force to all particles.
     '''
