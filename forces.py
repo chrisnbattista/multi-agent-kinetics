@@ -126,6 +126,7 @@ def pressure_force(i, state, pressure, h=1, context=None):
 
     densities = properties.density_all(state, h=h)
     active_rows = (densities != 0)
+    ##print(active_rows)
 
     # isolate particle position data
     if state.shape[1] == 7:
@@ -140,7 +141,7 @@ def pressure_force(i, state, pressure, h=1, context=None):
         ##print(p_dists)
     dists_i = scipy.spatial.distance.squareform(
         p_dists
-    )[:,i][active_rows]
+    )[:,i]
     k_vals = [kernels.cubic_spline_grad(d, h=h) for d in dists_i]
     pairwise_force_mags = np.zeros(state.shape[0])
     if all(k == 0 for k in k_vals): return np.zeros((spatial_dims,))
@@ -151,11 +152,8 @@ def pressure_force(i, state, pressure, h=1, context=None):
     
 
     # m * p / rho matrix
-    pairwise_force_mags[active_rows] = np.nan_to_num(
-        np.multiply(
-            -1 * \
-            state[:,2][active_rows]**2 * \
-            (pressures[active_rows] / densities[active_rows]**2) + (pressures[i] / densities[i]**2),
+    pairwise_force_mags = np.nan_to_num(
+        np.multiply((-1) * state[:,2]**2 * (pressures / densities**2) + (pressures[i] / densities[i]**2),
             k_vals
         ),
         neginf=0,

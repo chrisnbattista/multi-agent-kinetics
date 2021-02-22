@@ -156,16 +156,20 @@ def render_1d_orbit_state(sample_data,
                     agent_colors=None,
                     agent_sizes=None):
 
+    print(sample_data)
+    print(sample_data.shape)
+    print(sample_data[:,2])
+
     ax[0].clear()
 
     sns.lineplot(x = [sample_data[0, 2], sample_data[4,2]], y = [0, 0], color = 'g', ax = ax[0])
 
     p = sns.scatterplot(
             x=sample_data[:,2],
-            y=[0]*5,
-            c=agent_colors,
-            s=agent_sizes,
-            ax=ax[0]
+            y=[0,0,0,0,0],
+            #c=agent_colors, ## these are the offending lines.
+            #s=agent_sizes,  ## maybe check to see if the arguments are None higher up in this function, and initialize them if so?
+            ax=ax[0]         ## or, just remove if not needed, or, use if/else to only pass them if not None
     )
 
     # control x and y limits
