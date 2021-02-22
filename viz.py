@@ -146,7 +146,7 @@ def render_2d_orbit_state(world,
     fig.canvas.draw_idle()
     fig.canvas.start_event_loop(0.01)
 
-def render_1d_orbit_state(sample_data,
+def render_1d_orbit_state(world,
                     fig,
                     ax,
                     show_indicators=False,
@@ -162,8 +162,24 @@ def render_1d_orbit_state(sample_data,
 
     ax[0].clear()
 
-    sns.lineplot(x = [sample_data[0, 2], sample_data[4,2]], y = [0, 0], color = 'g', ax = ax[0])
+    # maximum is the position of the lead agent
+    maximum = max(world[:,3])
+    minimum = min(world[:,3])
 
+    sns.lineplot(
+        x = [minimum, maximum], 
+        y = [0, 0], 
+        color = 'g', 
+        ax = ax[0]
+    )
+
+    color = []
+    for c in range (0, 5):
+        if world[c, 3] == maximum:
+            color.append('b')
+        else:
+            color.append('k')
+    
     p = sns.scatterplot(
             x=sample_data[:,2],
             y=[0,0,0,0,0],
@@ -173,8 +189,8 @@ def render_1d_orbit_state(sample_data,
     )
 
     # control x and y limits
-    p.set_xlim([sample_data[0, 2] -50, sample_data[4,2] + 50])
-    p.set_ylim([-50, 50])
+    #p.set_xlim([minimum - 50, maximum + 50])
+    #p.set_ylim([-50, 50])
 
     # 2/3/21 stuff
     # data = np.array([
