@@ -59,4 +59,5 @@ def initialize_random_circle(n_particles, radius, center=(0,0), min_dist=4, rand
 
             world_state[i, :] = (0, i, 10, candidate_b_1, candidate_b_2, vs[0], vs[1])
 
+    world_state[:,3:5] += center
     return world_state

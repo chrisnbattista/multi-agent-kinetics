@@ -95,16 +95,18 @@ def viscous_damping_force(world, c, **kwargs):
         return -c * world[:, 4][:, np.newaxis]
 
 
-def gravity_well(world, lamb, **kwargs):
+def linear_attractor(world, lamb, target=None, **kwargs):
     '''
     Exerts a constant gravitational force from the origin - assuming
     the ground level simplified form of constant acceleration gravity.
     '''
-
-    if world.shape[1] == 7:
-        return -lamb / world[:, 2, None] * world[:, 3:5]
-    elif world.shape[1] == 5:
-        return (-lamb / world[:, 2] * world[:, 3])[:, np.newaxis]
+    if not target:
+        if world.shape[1] == 7:
+            return -lamb / world[:, 2, None] * world[:, 3:5]
+        elif world.shape[1] == 5:
+            return (-lamb / world[:, 2] * world[:, 3])[:, np.newaxis]
+    if target:
+        return -lamb / world[:, 2, None] * (world[:, 3:5] - world[target, 3:5])
 
 
 def sum_world_gravity_potential(world, lamb, **kwargs):
@@ -124,9 +126,9 @@ def pressure_force(i, state, pressure, h=1, context=None):
     returns: [force_x, force_y]
     '''
 
-    densities = properties.density_all(state, h=h)
-    active_rows = (densities != 0)
-    ##print(active_rows)
+    
+
+    
 
     # isolate particle position data
     if state.shape[1] == 7:
@@ -139,30 +141,67 @@ def pressure_force(i, state, pressure, h=1, context=None):
         ##print(list(itertools.combinations(coords, 2)))
         p_dists = [c[0] - c[1] for c in itertools.combinations(coords, 2)]
         ##print(p_dists)
+    
+
     dists_i = scipy.spatial.distance.squareform(
         p_dists
     )[:,i]
     k_vals = [kernels.cubic_spline_grad(d, h=h) for d in dists_i]
-    pairwise_force_mags = np.zeros(state.shape[0])
-    if all(k == 0 for k in k_vals): return np.zeros((spatial_dims,))
-
-    # https://lucasschuermann.com/writing/implementing-sph-in-2d
-    pressures = np.full(state.shape[0], pressure).T
-
     
 
+    if not context['sph_active'][i]:
+        ##print(f"skipping agent {i}")
+        return np.zeros((spatial_dims,))
+    if all(not k for k in k_vals): return np.zeros((spatial_dims,))
+
+    
+    pairwise_force_mags = np.zeros(state.shape[0])
+
+
+    densities = properties.density_all(state, h=h)
+    own_density = densities[i]
+    densities[i] = 0
+    densities = np.ma.masked_where(densities<0.0001, densities)
+
+    ##print("DENS")
+    ##print(densities)
+
+    # https://lucasschuermann.com/writing/implementing-sph-in-2d
+    pressures = np.full(state.shape[0], pressure)
+
+    ##print(pressures)
+
     # m * p / rho matrix
-    pairwise_force_mags = np.nan_to_num(
-        np.multiply((-1) * state[:,2]**2 * (pressures / densities**2) + (pressures[i] / densities[i]**2),
-            k_vals
-        ),
-        neginf=0,
-        posinf=0
-    )
+    pairwise_force_mags = \
+        np.multiply((-1), state[:,2]**2) * k_vals
+    #print(pairwise_force_mags)
+    pairwise_force_mags = \
+        np.multiply(
+            (pressures[i] / own_density**2) + (pressures / densities**2),
+            pairwise_force_mags
+        )
+    pairwise_force_mags = np.ma.filled(pairwise_force_mags, 0)
+    
+    # pairwise_force_mags = \
+    #     np.ma.filled(
+    #         np.multiply(
+    #             pairwise_force_mags,
+    #             pressures[i] / np.ma.masked_equal(densities**2, 0)
+    #         ),
+    #         0
+    #     )
+    #print(pairwise_force_mags)
+        
+        
+        # * (pressures / densities**2) + (pressures[i] / densities[i]**2),
+       #     k_vals
+      #  )
 
     if spatial_dims == 2:
         directions = normalize((coords[:, np.newaxis] - coords)[i], axis=1)
-        forces = np.dot(pairwise_force_mags, directions)
+        ##print(pairwise_force_mags)
+        forces = np.sum(directions * pairwise_force_mags[:, None], axis=0)
+        ##print(forces)
     else:
         directions = 1 * np.sign((coords[:, np.newaxis] - coords)[i])
         forces = np.sum(
@@ -171,7 +210,7 @@ def pressure_force(i, state, pressure, h=1, context=None):
                 directions
             )
         )
-    return forces
+    return np.clip(forces, -1000, 1000)
 
 def world_pressure_force(world, pressure, h=1, context=None):
     '''
@@ -181,7 +220,7 @@ def world_pressure_force(world, pressure, h=1, context=None):
     else: spatial_dims = 1
     force_accumulator = np.zeros((world.shape[0], spatial_dims))
     for i in range(world.shape[0]):
-        force_accumulator[i,:] += pressure_force(i, world, pressure, h=h)
+        force_accumulator[i,:] += pressure_force(i, world, pressure, h=h, context=context)
     
     return force_accumulator
 
@@ -234,4 +273,12 @@ def world_viscosity_force(world, h=1, context=None):
     for i in range(world.shape[0]):
         force_accumulator[i,:] += viscosity_force(i, world, h=h)
     
+    return force_accumulator
+
+def swarm_leader_force(world, leader_force=np.zeros((2,)), context=None):
+    '''
+    for sph leader
+    '''
+    force_accumulator = np.zeros((world.shape[0], context['spatial_dims']))
+    force_accumulator[context['swarm_leader'],:] += leader_force
     return force_accumulator

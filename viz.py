@@ -12,6 +12,8 @@ from tqdm import tqdm
 
 import itertools, random
 
+from . import projections
+
 
 
 
@@ -142,6 +144,57 @@ def render_2d_orbit_state(world,
     #     fig.text(0.01, 0.01, note)
     # else:
     #     fig.texts[0].set_text(note)
+
+    ax[0].set(xlim=(-10, 50), ylim=(-30, 30))
+
+    fig.canvas.draw_idle()
+    fig.canvas.start_event_loop(0.01)
+
+def render_projected_2d_orbit_state(
+                    world,
+                    fig,
+                    ax,
+                    show_indicators=False,
+                    indicators=None,
+                    indicator_labels=None,
+                    fig_title=None,
+                    agent_colors=None,
+                    agent_sizes=None,
+                    orbit_radius=1):
+    '''
+    '''
+
+    transformed_world = np.apply_along_axis(lambda p: projections.stereographic_projection(p[3:5], r=orbit_radius), 1, world/10)
+
+    ax[0] = fig.gca(projection='3d')
+    ax[0].clear()
+    ax[0].set_xlim(-orbit_radius, orbit_radius)
+    ax[0].set_ylim(-orbit_radius, orbit_radius)
+    ax[0].set_zlim(-orbit_radius, orbit_radius)
+
+    u = np.linspace(0, 2 * np.pi, 100)
+    v = np.linspace(0, np.pi, 100)
+
+    x = orbit_radius * np.outer(np.cos(u), np.sin(v))
+    y = orbit_radius * np.outer(np.sin(u), np.sin(v))
+    z = orbit_radius * np.outer(np.ones(np.size(u)), np.cos(v))
+
+    ax[0].plot_surface(x, y, z,  rstride=4, cstride=4, color='b', linewidth=0, alpha=0.1)
+    
+    ax[0].scatter(
+        transformed_world[:,0],
+        transformed_world[:,1],
+        transformed_world[:,2],
+        c=agent_colors,
+        s=agent_sizes
+    )
+    
+    if fig_title != None:
+        fig.canvas.set_window_title(fig_title)
+
+
+
+    ##ax[0].set(xlim=(-10, 50), ylim=(-30, 30))
 
     fig.canvas.draw_idle()
     fig.canvas.start_event_loop(0.01)
