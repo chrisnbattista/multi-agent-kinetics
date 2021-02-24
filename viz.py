@@ -149,6 +149,7 @@ def render_2d_orbit_state(world,
 def render_1d_orbit_state(world,
                     fig,
                     ax,
+                    h,
                     show_indicators=False,
                     indicators=None,
                     indicator_labels=None,
@@ -183,6 +184,14 @@ def render_1d_orbit_state(world,
             s=agent_sizes,
             ax=ax[0]
     )
+
+    r = h
+    for c in range (0, 5):
+        plt.Circle((world[c, 3], 0), r, c='o')
+        if world[c, 3] == maximum:
+            plt.Circle((world[c, 3], 0), 10, c='g')
+
+    
 
     # control x and y limits
     #p.set_xlim([minimum - 50, maximum + 50])

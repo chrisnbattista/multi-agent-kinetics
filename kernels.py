@@ -2,6 +2,8 @@
 # goal: effectively make interactions local, weighting by distance essentially
 
 import math
+import numpy as np
+import matplotlib.pyplot as plt
 
 def cubic_spline(r, sigma=None, h=1):
     '''
@@ -56,3 +58,22 @@ def cubic_spline_grad_double(r, sigma=None, h=1):
         return sigma**3 * (12 - 6*r/h)
     else:
         return sigma**3 * 0.5 * (9*r/h - 6)
+
+def gaussian_function(r, h = 1, a = 1, b = 0, c = 1):
+    y = r/h
+    value = a*np.exp((-((y-b)**2)/2*(c)**2))
+    if r > h:
+        return 0
+    elif r <= h:
+        print('{:.4f}'.format(value))
+        return value
+    
+    mean = b
+    standard_deviation = c
+
+    x_values = np.arange(-10, 10, 0.1)
+    y_values = scipy.stats.norm(mean, standard_deviation)
+
+    plt.plot(x_values, y_values.pdf(x_values))
+
+# test gaussian_function(r = 5, h = 10, a = 10, b = 0, c = 1)
