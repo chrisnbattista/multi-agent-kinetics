@@ -194,7 +194,7 @@ def render_2d_orbit_state(world,
     ax[0].set_ylabel('orbital plane basis 2 (km)')
 
     ax[1].set_xlabel('time (ksec)')
-    ax[1].set_ylabel('total SPH force (kN)')
+    ax[1].set_ylabel('total SPH delta_v (km/ksec^2')
 
     ##two_d_video_images.append(ax[0].get_images()[0])
 
