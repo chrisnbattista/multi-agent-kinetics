@@ -125,6 +125,11 @@ def render_2d_orbit_state(world,
     state = world.get_state()
 
     ax[0].clear()
+    ax[0].plot(
+        (-25, 25),
+        (0, 0),
+        c='g'
+    )
 
     p = sns.scatterplot(
             x=state[:,3],
@@ -168,12 +173,6 @@ def render_2d_orbit_state(world,
         fig.text(0.01, 0.01, note)
     else:
         fig.texts[0].set_text(note)
-    
-    ax[0].plot(
-        (-25, 25),
-        (0, 0),
-        c='g'
-    )
 
     ax[0].set(xlim=(-25, 25), ylim=(-25, 25))
 
@@ -208,15 +207,20 @@ def render_projected_2d_orbit_state(
 
     transformed_world = np.apply_along_axis(lambda p: projections.mercator_projection(p=p[3:5]+world.context['cumulative_recentering'], r=orbit_radius), 1, state/scaling_factor)
 
+    for i in (0,1):
+        ax[i].set_yticklabels([])
+        ax[i].set_xticklabels([])  
+        ax[i].set_yticks([])
+        ax[i].set_xticks([])
     ax[0] = fig.gca(projection='3d')
     ax[0].clear()
     ax[0].set_xlim(-orbit_radius, orbit_radius)
     ax[0].set_ylim(-orbit_radius, orbit_radius)
     ax[0].set_zlim(-orbit_radius, orbit_radius)
 
-    ax[0].set_xlabel('km')
-    ax[0].set_ylabel('km')
-    ax[0].set_zlabel('km')
+    ax[0].set_xlabel('ECEF position, basis 1 (km)')
+    ax[0].set_ylabel('ECEF position, basis 2 (km)')
+    ax[0].set_zlabel('ECEF position, basis 3 (km)')
 
     u = np.linspace(0, 2 * np.pi, 100)
     v = np.linspace(0, np.pi, 100)
@@ -234,6 +238,13 @@ def render_projected_2d_orbit_state(
         c=agent_colors,
         ##s=agent_sizes
     )
+
+    theta = np.linspace(0, 2 * np.pi, 201)
+    x = orbit_radius*np.cos(theta)
+    y = orbit_radius*np.sin(theta)
+    ax[0].plot(x,
+                y,
+                c='g')
     
     if fig_title != None:
         fig.canvas.set_window_title(fig_title)

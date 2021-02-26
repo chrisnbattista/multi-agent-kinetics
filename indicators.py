@@ -47,11 +47,11 @@ def mse_trajectories(reference_trajectories, test_trajectories, n_particles):
     norms = np.linalg.norm(differences, axis=1)
     return ne.evaluate('sum(norms**2)') / n_particles
 
-def total_sph_force(world):
+def total_sph_delta_v(world):
     '''
-    Returns the total SPH force stored in the world's accumulator and clears it.
+    Returns the total SPH-related delta_v stored in the world's accumulator and clears it.
     '''
-    if not 'total_sph_force' in world.scratch_material: return 0
-    t = world.scratch_material['total_sph_force']
-    world.scratch_material['total_sph_force'] = 0
+    if not 'total_sph_delta_v' in world.scratch_material: return 0
+    t = world.scratch_material['total_sph_delta_v']
+    world.scratch_material['total_sph_delta_v'] = 0
     return t

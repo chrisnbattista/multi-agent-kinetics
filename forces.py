@@ -97,13 +97,13 @@ def viscous_damping_force(world, c, **kwargs):
     state = world.get_state()
 
     if state.shape[1] == 7:
-        # null_forces = np.zeros((world.n_agents,2))
-        # return np.where(
-        #     np.c_[world.context['damping_active']],
-        #     -c * state[:, 5:7],
-        #     null_forces
-        # )
-        return -c * state[:, 5:7]
+        null_forces = np.zeros((world.n_agents,2))
+        return np.where(
+            np.c_[world.context['damping_active']],
+            -c * state[:, 5:7],
+            null_forces
+        )
+        ##return -c * state[:, 5:7]
     else:
         return -c * state[:, 4][:, np.newaxis]
 
@@ -242,8 +242,8 @@ def world_pressure_force(world, pressure, h=1, context=None):
 
     state = world.get_state()
 
-    if not 'total_sph_force' in world.scratch_material:
-        world.scratch_material['total_sph_force'] = 0
+    if not 'total_sph_delta_v' in world.scratch_material:
+        world.scratch_material['total_sph_delta_v'] = 0
 
     if state.shape[1] == 7: spatial_dims = 2
     else: spatial_dims = 1
@@ -251,7 +251,7 @@ def world_pressure_force(world, pressure, h=1, context=None):
     for i in range(state.shape[0]):
         force_accumulator[i,:] += pressure_force(i, state, pressure, h=h, context=context)
     
-    world.scratch_material['total_sph_force'] += np.linalg.norm(force_accumulator)
+    world.scratch_material['total_sph_delta_v'] += np.linalg.norm(force_accumulator/10)
 
     return force_accumulator
 
