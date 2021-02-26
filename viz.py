@@ -130,7 +130,7 @@ def render_2d_orbit_state(world,
             x=state[:,3],
             y=state[:,4],
             c=agent_colors,
-            s=agent_sizes,
+            ##s=agent_sizes,
             ax=ax[0]
     )
 
@@ -166,8 +166,14 @@ def render_2d_orbit_state(world,
         fig.text(0.01, 0.01, note)
     else:
         fig.texts[0].set_text(note)
+    
+    ax[0].plot(
+        (-25, 25),
+        (0, 0),
+        c='g'
+    )
 
-    ax[0].set(xlim=(-20, 20), ylim=(-20, 20))
+    ax[0].set(xlim=(-25, 25), ylim=(-25, 25))
 
     ax[0].set_xlabel('orbital plane basis 1 (km)')
     ax[0].set_ylabel('orbital plane basis 2 (km)')
@@ -224,7 +230,7 @@ def render_projected_2d_orbit_state(
         transformed_world[:,1],
         transformed_world[:,2],
         c=agent_colors,
-        s=agent_sizes
+        ##s=agent_sizes
     )
     
     if fig_title != None:

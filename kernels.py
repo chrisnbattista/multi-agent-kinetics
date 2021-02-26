@@ -16,7 +16,7 @@ def cubic_spline(r, sigma=None, h=1):
 
     if r > 2*h:
         return 0
-    elif (r >= h) and (r <= 2*h):
+    elif (r <= 2*h): ##and (r >= h):
         return sigma * 0.25 * (2 - r/h)**3
     else:
         return sigma * ( 1 - 1.5 * (r/h)**2 * (1 - r/h/2) ) 

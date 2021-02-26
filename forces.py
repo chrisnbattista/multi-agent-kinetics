@@ -97,6 +97,12 @@ def viscous_damping_force(world, c, **kwargs):
     state = world.get_state()
 
     if state.shape[1] == 7:
+        # null_forces = np.zeros((world.n_agents,2))
+        # return np.where(
+        #     np.c_[world.context['damping_active']],
+        #     -c * state[:, 5:7],
+        #     null_forces
+        # )
         return -c * state[:, 5:7]
     else:
         return -c * state[:, 4][:, np.newaxis]
@@ -110,13 +116,18 @@ def linear_attractor(world, lamb, target=None, **kwargs):
 
     state = world.get_state()
 
-    if not target:
+    if target != None:
+        null_forces = np.zeros((world.n_agents,2))
+        return np.where(
+            np.c_[world.context['following_active']],
+            (-lamb * normalize(state[:, 3:5] - state[target, 3:5])),
+            null_forces
+        )
+    else:
         if state.shape[1] == 7:
             return -lamb / state[:, 2, None] * state[:, 3:5]
         elif state.shape[1] == 5:
             return (-lamb / state[:, 2] * state[:, 3])[:, np.newaxis]
-    if target:
-        return -lamb / state[:, 2, None] * (state[:, 3:5] - state[target, 3:5])
 
 
 def sum_world_gravity_potential(world, lamb, **kwargs):
