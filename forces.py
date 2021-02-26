@@ -120,7 +120,7 @@ def linear_attractor(world, lamb, target=None, **kwargs):
         null_forces = np.zeros((world.n_agents,2))
         return np.where(
             np.c_[world.context['following_active']],
-            (-lamb * normalize(state[:, 3:5] - state[target, 3:5])),
+            (-lamb * (state[:, 3:5] - state[target, 3:5])),
             null_forces
         )
     else:

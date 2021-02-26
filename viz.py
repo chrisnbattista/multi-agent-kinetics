@@ -109,6 +109,7 @@ def render_2d_orbit_state(world,
                     fig_title=None,
                     agent_colors=None,
                     agent_sizes=None,
+                    agent_markers=None,
                     h=None,
                     t=0):
     '''
@@ -131,10 +132,21 @@ def render_2d_orbit_state(world,
         c='g'
     )
 
+    n_sph = sum(world.context['sph_active'])
+
     p = sns.scatterplot(
-            x=state[:,3],
-            y=state[:,4],
-            c=agent_colors,
+            x=state[:n_sph+1,3],
+            y=state[:n_sph+1,4],
+            c=agent_colors[:n_sph+1],
+            marker='o',
+            ##s=agent_sizes,
+            ax=ax[0]
+    )
+    p = sns.scatterplot(
+            x=state[n_sph+1:,3],
+            y=state[n_sph+1:,4],
+            c=agent_colors[n_sph+1:],
+            marker='^',
             ##s=agent_sizes,
             ax=ax[0]
     )
@@ -146,8 +158,10 @@ def render_2d_orbit_state(world,
         h_pairs = kd_tree.query_pairs(r=h)
         if h_pairs:
             lines = []
-            for pair in h_pairs: lines.append((state[pair[0],3:5], state[pair[1],3:5]))
-            lc = matplotlib.collections.LineCollection(lines)
+            for pair in h_pairs:
+                if pair[0] < n_sph or pair[1] < n_sph:
+                    lines.append((state[pair[0],3:5], state[pair[1],3:5]))
+            lc = matplotlib.collections.LineCollection(lines, colors='k')
             ax[0].add_collection(lc)
 
     if show_indicators:
@@ -168,7 +182,7 @@ def render_2d_orbit_state(world,
     if fig_title != None:
         fig.canvas.set_window_title(fig_title)
     
-    note = 'Sim time: {:.2f} ksec'.format(world.current_timestep*world.timestep_length)
+    note = 'Sim time: {:.2f} ksec | h: {:.2f}'.format(world.current_timestep*world.timestep_length, h)
     if not len(fig.texts):
         fig.text(0.01, 0.01, note)
     else:
@@ -218,9 +232,9 @@ def render_projected_2d_orbit_state(
     ax[0].set_ylim(-orbit_radius, orbit_radius)
     ax[0].set_zlim(-orbit_radius, orbit_radius)
 
-    ax[0].set_xlabel('ECEF position, basis 1 (km)')
-    ax[0].set_ylabel('ECEF position, basis 2 (km)')
-    ax[0].set_zlabel('ECEF position, basis 3 (km)')
+    ax[0].set_xlabel('ECI position, basis 1 (km)')
+    ax[0].set_ylabel('ECI position, basis 2 (km)')
+    ax[0].set_zlabel('ECI position, basis 3 (km)')
 
     u = np.linspace(0, 2 * np.pi, 100)
     v = np.linspace(0, np.pi, 100)
