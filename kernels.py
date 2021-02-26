@@ -17,9 +17,9 @@ def cubic_spline(r, sigma=None, h=1):
     if r > 2*h:
         return 0
     elif (r >= h) and (r <= 2*h):
-        return sigma**3 * 0.25 * (2 - r/h)**3
+        return sigma * 0.25 * (2 - r/h)**3
     else:
-        return sigma**3 * ( 1 - 1.5 * (r/h)**2 * (1 - r/h/2) ) 
+        return sigma * ( 1 - 1.5 * (r/h)**2 * (1 - r/h/2) ) 
 
 def cubic_spline_grad(r, sigma=None, h=1):
     '''
@@ -35,9 +35,9 @@ def cubic_spline_grad(r, sigma=None, h=1):
     if r > 2*h:
         return 0
     elif (r >= h) and (r <= 2*h):
-        return sigma**3 * -3*(r/h - 2)**2
+        return sigma * -3*(r/h - 2)**2
     else:
-        return sigma**3 * 0.75 * r/h * (3*r/h - 4)
+        return sigma * 0.75 * r/h * (3*r/h - 4)
 
 def cubic_spline_grad_double(r, sigma=None, h=1):
     '''
@@ -53,6 +53,6 @@ def cubic_spline_grad_double(r, sigma=None, h=1):
     if r > 2*h:
         return 0
     elif (r >= h) and (r <= 2*h):
-        return sigma**3 * (12 - 6*r/h)
+        return sigma * (12 - 6*r/h)
     else:
-        return sigma**3 * 0.5 * (9*r/h - 6)
+        return sigma * 0.5 * (9*r/h - 6)

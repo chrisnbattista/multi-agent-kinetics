@@ -1,13 +1,14 @@
 
+two_d_video_images = []
 
 
 
-
-
+import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
 import torch
 import numpy as np
+import scipy
 from tqdm import tqdm
 
 import itertools, random
@@ -18,15 +19,21 @@ from . import projections
 
 
 
-def set_up_figure(title='Plot'):
+def set_up_figure(title='Plot', plot_type='2d+ind'):
     plt.ion()
     plt.show()
     sns.set_theme()
     sns.color_palette("dark")
-    fig, ax = plt.subplots(2,1,
-                        gridspec_kw={'height_ratios': [4, 1]},
-                        figsize=(7.5, 9)
-    )
+    if plot_type == '2d+ind':
+        fig, ax = plt.subplots(2,1,
+                            gridspec_kw={'height_ratios': [4, 1]},
+                            figsize=(6, 7.5)
+        )
+    elif plot_type == '2d_proj_orbit':
+        fig, ax = plt.subplots(2,1,
+                            gridspec_kw={'height_ratios': [4, 0]},
+                            figsize=(6, 6)
+        )
     fig.canvas.set_window_title(title)
     return fig, ax
 
@@ -98,54 +105,77 @@ def render_2d_orbit_state(world,
                     fig,
                     ax,
                     show_indicators=False,
-                    indicators=None,
                     indicator_labels=None,
                     fig_title=None,
                     agent_colors=None,
-                    agent_sizes=None):
+                    agent_sizes=None,
+                    h=None,
+                    t=0):
     '''
     Display the particles described in the world array onto the figure and axis provided.
     Activates the plt event loop so that the figure is displayed.
-    Also, display the indicator timeseries below if show_indicators=True.
+    Also, display the indicator timeseries below if present.
 
     Expects:
-        world state numpy array with only one timestep of data
+        world object
         plt figure
-        axes object with one axis if show_indicators=False, two axes otherwise
+        axes object
     '''
+
+    state = world.get_state()
 
     ax[0].clear()
 
     p = sns.scatterplot(
-            x=world[:,3],
-            y=world[:,4],
+            x=state[:,3],
+            y=state[:,4],
             c=agent_colors,
             s=agent_sizes,
             ax=ax[0]
     )
 
-    if show_indicators and indicators:
-        n_indicators = indicators.shape[1]
+    if h:
+        kd_tree = scipy.spatial.cKDTree(state[:,3:5])
+        h_pairs = kd_tree.query_pairs(r=h)
+        if h_pairs:
+            lines = []
+            for pair in h_pairs: lines.append((state[pair[0],3:5], state[pair[1],3:5]))
+            lc = matplotlib.collections.LineCollection(lines)
+            ax[0].add_collection(lc)
+
+    if show_indicators:
+        indicators = world.get_indicator_history()
+        n_indicators = len(world.indicators)
         ax[1].clear()
-        for ind in range(1, n_indicators+1):
+        for ind in range(n_indicators):
             sns.lineplot(
-                x=indicators[:i, 0],
-                y=indicators[:i, ind],
+                x=np.linspace(0, world.current_timestep*world.timestep_length, world.current_timestep),
+                y=indicators[:world.current_timestep, ind],
                 ax=ax[1],
                 legend=False
             )
         
         if indicator_labels:
-            plt.legend(loc='lower right', labels=indicator_labels)
+            ax[1].legend(loc='lower right', labels=indicator_labels)
     
     if fig_title != None:
         fig.canvas.set_window_title(fig_title)
-    # if not len(fig.texts):
-    #     fig.text(0.01, 0.01, note)
-    # else:
-    #     fig.texts[0].set_text(note)
+    
+    note = 'Sim time: {:.2f} ksec'.format(world.current_timestep*world.timestep_length)
+    if not len(fig.texts):
+        fig.text(0.01, 0.01, note)
+    else:
+        fig.texts[0].set_text(note)
 
-    ax[0].set(xlim=(-10, 50), ylim=(-30, 30))
+    ax[0].set(xlim=(-20, 20), ylim=(-20, 20))
+
+    ax[0].set_xlabel('orbital plane basis 1 (km)')
+    ax[0].set_ylabel('orbital plane basis 2 (km)')
+
+    ax[1].set_xlabel('time (ksec)')
+    ax[1].set_ylabel('total SPH force (kN)')
+
+    ##two_d_video_images.append(ax[0].get_images()[0])
 
     fig.canvas.draw_idle()
     fig.canvas.start_event_loop(0.01)
@@ -160,17 +190,25 @@ def render_projected_2d_orbit_state(
                     fig_title=None,
                     agent_colors=None,
                     agent_sizes=None,
-                    orbit_radius=1):
+                    orbit_radius=1,
+                    scaling_factor=1,
+                    t=0):
     '''
     '''
 
-    transformed_world = np.apply_along_axis(lambda p: projections.stereographic_projection(p[3:5], r=orbit_radius), 1, world/10)
+    state = world.get_state()
+
+    transformed_world = np.apply_along_axis(lambda p: projections.mercator_projection(p=p[3:5]+world.context['cumulative_recentering'], r=orbit_radius), 1, state/scaling_factor)
 
     ax[0] = fig.gca(projection='3d')
     ax[0].clear()
     ax[0].set_xlim(-orbit_radius, orbit_radius)
     ax[0].set_ylim(-orbit_radius, orbit_radius)
     ax[0].set_zlim(-orbit_radius, orbit_radius)
+
+    ax[0].set_xlabel('km')
+    ax[0].set_ylabel('km')
+    ax[0].set_zlabel('km')
 
     u = np.linspace(0, 2 * np.pi, 100)
     v = np.linspace(0, np.pi, 100)
@@ -192,7 +230,11 @@ def render_projected_2d_orbit_state(
     if fig_title != None:
         fig.canvas.set_window_title(fig_title)
 
-
+    note = 'Sim time: {:.2f} ksec'.format(world.current_timestep*world.timestep_length)
+    if not len(fig.texts):
+        fig.text(0.01, 0.01, note)
+    else:
+        fig.texts[0].set_text(note)
 
     ##ax[0].set(xlim=(-10, 50), ylim=(-30, 30))
 

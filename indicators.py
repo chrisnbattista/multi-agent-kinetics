@@ -11,7 +11,7 @@ def potential_energy(world, potentials):
     V = 0
 
     for potential in potentials:
-        v = potential(world)
+        v = potential(world.get_state())
         V += v
 
     return V
@@ -21,8 +21,8 @@ def kinetic_energy(world):
     Calculates kinetic energy of a whole particle system.
     '''
 
-    vel_mags = np.linalg.norm(world[:,4:6], axis=1)
-    T = np.sum( ((vel_mags**2) * world[:,3] / 2),
+    vel_mags = np.linalg.norm(world.get_state()[:,4:6], axis=1)
+    T = np.sum( ((vel_mags**2) * world.get_state()[:,3] / 2),
                 axis=0)
 
     return T
@@ -33,8 +33,8 @@ def hamiltonian(world, potentials=[]):
     '''
 
     return \
-        kinetic_energy(world) + \
-        potential_energy(world, potentials)
+        kinetic_energy(world.get_state()) + \
+        potential_energy(world.get_state(), potentials)
 
 def mse_trajectories(reference_trajectories, test_trajectories, n_particles):
     '''
@@ -46,3 +46,12 @@ def mse_trajectories(reference_trajectories, test_trajectories, n_particles):
     differences = test_trajectories[:, 1:3] - reference_trajectories[:, 1:3]
     norms = np.linalg.norm(differences, axis=1)
     return ne.evaluate('sum(norms**2)') / n_particles
+
+def total_sph_force(world):
+    '''
+    Returns the total SPH force stored in the world's accumulator and clears it.
+    '''
+    if not 'total_sph_force' in world.scratch_material: return 0
+    t = world.scratch_material['total_sph_force']
+    world.scratch_material['total_sph_force'] = 0
+    return t
