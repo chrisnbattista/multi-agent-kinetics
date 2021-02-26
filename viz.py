@@ -134,6 +134,8 @@ def render_2d_orbit_state(world,
             ax=ax[0]
     )
 
+    #sum(world.context['sph_active'])
+
     if h:
         kd_tree = scipy.spatial.cKDTree(state[:,3:5])
         h_pairs = kd_tree.query_pairs(r=h)

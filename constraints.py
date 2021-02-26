@@ -23,3 +23,13 @@ def linear_motion(world, state, velocity):
     '''
 
     state[:,3:5] += velocity * world.timestep_length
+
+def constrain_to_orbit(world, state):
+    '''
+    '''
+    state[:,4] = np.where(
+        np.array(world.context['following_active']),
+        0,
+        state[:,4]
+    )
+        
