@@ -149,10 +149,6 @@ def pressure_force(i, state, pressure, h=1, context=None):
     returns: [force_x, force_y]
     '''
 
-    
-
-    
-
     # isolate particle position data
     if state.shape[1] == 7:
         coords = state[:,3:5]
@@ -233,7 +229,7 @@ def pressure_force(i, state, pressure, h=1, context=None):
                 directions
             )
         )
-    return np.clip(forces, -1000, 1000)
+    return np.clip(forces, -10000, 10000)
 
 def world_pressure_force(world, pressure, h=1, context=None):
     '''
@@ -248,8 +244,16 @@ def world_pressure_force(world, pressure, h=1, context=None):
     if state.shape[1] == 7: spatial_dims = 2
     else: spatial_dims = 1
     force_accumulator = np.zeros((state.shape[0], spatial_dims))
-    for i in range(state.shape[0]):
-        force_accumulator[i,:] += pressure_force(i, state, pressure, h=h, context=context)
+    for i in range(len(world.control_agents)):
+        ego_state = state.copy()
+        np.put(ego_state, [[i, i], [3,4]], world.control_agents[i].X_update[:-1])
+        force_accumulator[i,:] += pressure_force(
+                                                    i,
+                                                    ego_state,
+                                                    pressure,
+                                                    h=h,
+                                                    context=context
+                                                )
     
     world.scratch_material['total_sph_delta_v'] += np.linalg.norm(force_accumulator/10)
 

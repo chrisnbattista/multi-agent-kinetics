@@ -27,6 +27,7 @@ class World:
                 initial_state=None,
                 spatial_dims=2,
                 n_agents=0,
+                control_agents=[],
                 n_timesteps=None,
                 timestep=0.0001,
                 forces=[],
@@ -54,6 +55,7 @@ class World:
             self.indicator_history = np.empty( (0, len(indicators)) )
 
         self.n_agents = n_agents
+        self.control_agents = control_agents
 
         self.forces = forces
         self.indicators = indicators
