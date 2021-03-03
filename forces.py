@@ -154,6 +154,10 @@ def pressure_force(i, state, pressure, h=1, context=None):
         coords = state[:,3:5]
         spatial_dims = 2
         p_dists = scipy.spatial.distance.pdist(coords)
+    elif state.shape[1] == 9:
+        coords = state[:,3:6]
+        spatial_dims = 3
+        p_dists = scipy.spatial.distance.pdist(coords)
     else:
         coords = state[:,3]
         spatial_dims = 1
@@ -165,10 +169,10 @@ def pressure_force(i, state, pressure, h=1, context=None):
     dists_i = scipy.spatial.distance.squareform(
         p_dists
     )[:,i]
-    k_vals = [kernels.cubic_spline_grad(d, h=h) for d in dists_i]
-    
+    k_vals = [kernels.quadratic(d, h=h) for d in dists_i]
+    print(k_vals)
 
-    if not context['sph_active'][i]:
+    if (context is not None) and ('sph_active' in context) and (not context['sph_active'][i]):
         ##print(f"skipping agent {i}")
         return np.zeros((spatial_dims,))
     if all(not k for k in k_vals): return np.zeros((spatial_dims,))
@@ -216,7 +220,7 @@ def pressure_force(i, state, pressure, h=1, context=None):
        #     k_vals
       #  )
 
-    if spatial_dims == 2:
+    if spatial_dims == 2 or spatial_dims == 3:
         directions = normalize((coords[:, np.newaxis] - coords)[i], axis=1)
         ##print(pairwise_force_mags)
         forces = np.sum(directions * pairwise_force_mags[:, None], axis=0)
@@ -233,7 +237,9 @@ def pressure_force(i, state, pressure, h=1, context=None):
 
 def world_pressure_force(world, pressure, h=1, context=None):
     '''
-    Apply the pressure force to all particles.
+    Apply the pressure force to all particles, with associated bookkeeping.
+
+    Leverages get_agents_sph function to collect distributed 
     '''
 
     state = world.get_state()
@@ -241,12 +247,11 @@ def world_pressure_force(world, pressure, h=1, context=None):
     if not 'total_sph_delta_v' in world.scratch_material:
         world.scratch_material['total_sph_delta_v'] = 0
 
-    if state.shape[1] == 7: spatial_dims = 2
-    else: spatial_dims = 1
-    force_accumulator = np.zeros((state.shape[0], spatial_dims))
+    force_accumulator = np.zeros((state.shape[0], world.spatial_dims))
     for i in range(len(world.control_agents)):
         ego_state = state.copy()
-        np.put(ego_state, [[i, i], [3,4]], world.control_agents[i].X_update[:-1])
+        ##print(world.control_agents[i].X_update)
+        ##np.put(ego_state, [[i, i], [3,4]], world.control_agents[i].X_update[:-1])
         force_accumulator[i,:] += pressure_force(
                                                     i,
                                                     ego_state,

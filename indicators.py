@@ -41,9 +41,13 @@ def mse_trajectories(reference_trajectories, test_trajectories, n_particles):
     Calculates the aggregate mean squared error between two sets of particle
     trajectories, with the sets containing an arbitrary but corresponding
     number of particles.
+    Input:
+    n x m matrix, where n is number of entries, and m is number of spatial dims
+    Output:
+    scalar MSE based on row-wise norms
     '''
 
-    differences = test_trajectories[:, 1:3] - reference_trajectories[:, 1:3]
+    differences = test_trajectories - reference_trajectories
     norms = np.linalg.norm(differences, axis=1)
     return ne.evaluate('sum(norms**2)') / n_particles
 
