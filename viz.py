@@ -16,24 +16,31 @@ import itertools, random
 from . import projections
 
 
+floating_plots = {}
 
-
+def get_floating_plot(name, **params):
+    '''
+    '''
+    if not name in floating_plots:
+        floating_plots[name] = plt.figure(**{**params, **{'figsize':(6,3)}})
+        floating_plots[name].canvas.set_window_title(name)
+    return floating_plots[name]
 
 def set_up_figure(title='Plot', plot_type='2d+ind'):
     plt.ion()
     plt.show()
     sns.set_theme()
     sns.color_palette("dark")
-    if plot_type == '2d+ind':
-        fig, ax = plt.subplots(2,1,
-                            gridspec_kw={'height_ratios': [4, 1]},
-                            figsize=(6, 7.5)
-        )
-    elif plot_type == '2d_proj_orbit':
-        fig, ax = plt.subplots(2,1,
-                            gridspec_kw={'height_ratios': [4, 0]},
-                            figsize=(6, 6)
-        )
+    # if plot_type == '2d+ind':
+    #     fig, ax = plt.subplots(2,1,
+    #                         gridspec_kw={'height_ratios': [4, 1]},
+    #                         figsize=(6, 7.5)
+    #     )
+    # elif plot_type == '2d_proj_orbit':
+    fig, ax = plt.subplots(1,1,
+                        ##gridspec_kw={'height_ratios': [4, 0]},
+                        figsize=(6, 6)
+    )
     fig.canvas.set_window_title(title)
     return fig, ax
 
@@ -42,13 +49,13 @@ def trace_trajectories(world, fig, ax, fig_title=''):
     Performs colored line plots of all particle trajectories in system.
     '''
 
-    ax[0].clear()
+    ax.clear()
 
     for i in range(world.n_agents):
         sns.scatterplot(
             x=world.history[i::world.n_agents,3],
             y=world.history[i::world.n_agents,4],
-            ax=ax[0],
+            ax=ax,
             ci=None,
             s=5,
             palette="dark"
@@ -56,7 +63,7 @@ def trace_trajectories(world, fig, ax, fig_title=''):
         '''sns.scatterplot(
             x=(world.history[i,1],),
             y=(world.history[i,2],),
-            ax=ax[0],
+            ax=ax,
 
         )'''
     
@@ -80,7 +87,7 @@ def trace_predicted_vs_real_trajectories(y, y_pred, title, fig, ax):
     sns.scatterplot(
         x=y[:,0],
         y=y[:,1],
-        ax=ax[0],
+        ax=ax,
         ci=None,
         s=6,
         c=["b"]*y.shape[0],
@@ -90,7 +97,7 @@ def trace_predicted_vs_real_trajectories(y, y_pred, title, fig, ax):
     sns.scatterplot(
         x=y_pred[:,0],
         y=y_pred[:,1],
-        ax=ax[0],
+        ax=ax,
         ci=None,
         s=4,
         c=['r']*y_pred.shape[0],
@@ -125,8 +132,8 @@ def render_2d_orbit_state(world,
 
     state = world.get_state()
 
-    ax[0].clear()
-    ax[0].plot(
+    ax.clear()
+    ax.plot(
         (-25, 25),
         (0, 0),
         c='g'
@@ -140,7 +147,7 @@ def render_2d_orbit_state(world,
             c=agent_colors[:n_sph+1],
             marker='o',
             ##s=agent_sizes,
-            ax=ax[0]
+            ax=ax
     )
     p = sns.scatterplot(
             x=state[n_sph+1:,3],
@@ -148,7 +155,7 @@ def render_2d_orbit_state(world,
             c=agent_colors[n_sph+1:],
             marker='^',
             ##s=agent_sizes,
-            ax=ax[0]
+            ax=ax
     )
 
     #sum(world.context['sph_active'])
@@ -162,22 +169,27 @@ def render_2d_orbit_state(world,
                 if pair[0] < n_sph or pair[1] < n_sph:
                     lines.append((state[pair[0],3:5], state[pair[1],3:5]))
             lc = matplotlib.collections.LineCollection(lines, colors='k')
-            ax[0].add_collection(lc)
+            ax.add_collection(lc)
 
     if show_indicators:
         indicators = world.get_indicator_history()
         n_indicators = len(world.indicators)
-        ax[1].clear()
         for ind in range(n_indicators):
+            i_fig = get_floating_plot(indicator_labels[ind][0])
+            i_ax = i_fig.gca()
+            i_ax.clear()
             sns.lineplot(
                 x=np.linspace(0, world.current_timestep*world.timestep_length, world.current_timestep),
                 y=indicators[:world.current_timestep, ind],
-                ax=ax[1],
+                ax=i_ax,
                 legend=False
             )
-        
-        if indicator_labels:
-            ax[1].legend(loc='lower right', labels=indicator_labels)
+
+            i_ax.set_xlabel(indicator_labels[ind][1])
+            i_ax.set_ylabel(indicator_labels[ind][2])
+            i_fig.tight_layout()
+            if indicator_labels:
+                i_ax.legend(loc='lower right', labels=[indicator_labels[ind][0]])
     
     if fig_title != None:
         fig.canvas.set_window_title(fig_title)
@@ -188,15 +200,12 @@ def render_2d_orbit_state(world,
     else:
         fig.texts[0].set_text(note)
 
-    ax[0].set(xlim=(-25, 25), ylim=(-25, 25))
+    ax.set(xlim=(-25, 25), ylim=(-25, 25))
 
-    ax[0].set_xlabel('orbital plane basis 1 (km)')
-    ax[0].set_ylabel('orbital plane basis 2 (km)')
+    ax.set_xlabel('orbital plane basis 1 (km)')
+    ax.set_ylabel('orbital plane basis 2 (km)')
 
-    ax[1].set_xlabel('time (ksec)')
-    ax[1].set_ylabel('total SPH delta_v (km/ksec^2')
-
-    ##two_d_video_images.append(ax[0].get_images()[0])
+    ##two_d_video_images.append(ax.get_images()[0])
 
     fig.canvas.draw_idle()
     fig.canvas.start_event_loop(0.01)
@@ -222,19 +231,19 @@ def render_projected_2d_orbit_state(
     transformed_world = np.apply_along_axis(lambda p: projections.mercator_projection(p=p[3:5]+world.context['cumulative_recentering'], r=orbit_radius), 1, state/scaling_factor)
 
     for i in (0,1):
-        ax[i].set_yticklabels([])
-        ax[i].set_xticklabels([])  
-        ax[i].set_yticks([])
-        ax[i].set_xticks([])
-    ax[0] = fig.gca(projection='3d')
-    ax[0].clear()
-    ax[0].set_xlim(-orbit_radius, orbit_radius)
-    ax[0].set_ylim(-orbit_radius, orbit_radius)
-    ax[0].set_zlim(-orbit_radius, orbit_radius)
+        ax.set_yticklabels([])
+        ax.set_xticklabels([])  
+        ax.set_yticks([])
+        ax.set_xticks([])
+    ax = fig.gca(projection='3d')
+    ax.clear()
+    ax.set_xlim(-orbit_radius, orbit_radius)
+    ax.set_ylim(-orbit_radius, orbit_radius)
+    ax.set_zlim(-orbit_radius, orbit_radius)
 
-    ax[0].set_xlabel('ECI position, basis 1 (km)')
-    ax[0].set_ylabel('ECI position, basis 2 (km)')
-    ax[0].set_zlabel('ECI position, basis 3 (km)')
+    ax.set_xlabel('ECI position, basis 1 (km)')
+    ax.set_ylabel('ECI position, basis 2 (km)')
+    ax.set_zlabel('ECI position, basis 3 (km)')
 
     u = np.linspace(0, 2 * np.pi, 100)
     v = np.linspace(0, np.pi, 100)
@@ -243,9 +252,9 @@ def render_projected_2d_orbit_state(
     y = orbit_radius * np.outer(np.sin(u), np.sin(v))
     z = orbit_radius * np.outer(np.ones(np.size(u)), np.cos(v))
 
-    ax[0].plot_surface(x, y, z,  rstride=4, cstride=4, color='b', linewidth=0, alpha=0.1)
+    ax.plot_surface(x, y, z,  rstride=4, cstride=4, color='b', linewidth=0, alpha=0.1)
     
-    ax[0].scatter(
+    ax.scatter(
         transformed_world[:,0],
         transformed_world[:,1],
         transformed_world[:,2],
@@ -256,7 +265,7 @@ def render_projected_2d_orbit_state(
     theta = np.linspace(0, 2 * np.pi, 201)
     x = orbit_radius*np.cos(theta)
     y = orbit_radius*np.sin(theta)
-    ax[0].plot(x,
+    ax.plot(x,
                 y,
                 c='g')
     
@@ -269,7 +278,7 @@ def render_projected_2d_orbit_state(
     else:
         fig.texts[0].set_text(note)
 
-    ##ax[0].set(xlim=(-10, 50), ylim=(-30, 30))
+    ##ax.set(xlim=(-10, 50), ylim=(-30, 30))
 
     fig.canvas.draw_idle()
     fig.canvas.start_event_loop(0.01)
@@ -288,7 +297,7 @@ def render_1d_orbit_state(world,
     print(sample_data.shape)
     print(sample_data[:,2])
 
-    ax[0].clear()
+    ax.clear()
 
     # maximum is the position of the lead agent
     maximum = max(world[:,3])
@@ -298,7 +307,7 @@ def render_1d_orbit_state(world,
         x = [minimum, maximum], 
         y = [0, 0], 
         color = 'g', 
-        ax = ax[0]
+        ax = ax
     )
 
     color = []
@@ -313,7 +322,7 @@ def render_1d_orbit_state(world,
             y=[0,0,0,0,0],
             #c=agent_colors, ## these are the offending lines.
             #s=agent_sizes,  ## maybe check to see if the arguments are None higher up in this function, and initialize them if so?
-            ax=ax[0]         ## or, just remove if not needed, or, use if/else to only pass them if not None
+            ax=ax         ## or, just remove if not needed, or, use if/else to only pass them if not None
     )
 
     # control x and y limits
@@ -331,7 +340,7 @@ def render_1d_orbit_state(world,
 
     # color = ['k', 'k', 'k', 'k', 'b']
     
-    # sns.scatterplot(data[:, 0], data[:, 1], c = color, ax = ax[0])
+    # sns.scatterplot(data[:, 0], data[:, 1], c = color, ax = ax)
 
     if show_indicators and indicators:
         n_indicators = indicators.shape[1]
