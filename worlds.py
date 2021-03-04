@@ -27,11 +27,14 @@ class World:
                 initial_state=None,
                 spatial_dims=2,
                 n_agents=0,
+                control_agents=[],
                 n_timesteps=None,
-                timestep=0.01,
+                timestep=0.0001,
                 forces=[],
                 indicators=[],
                 integrator=integrators.integrate_rect_world,
+                context=None,
+                constraints=None,
                 **kwargs):
         '''
         Create a new World object with fixed parameters: forces, indicators, fixed timestep, etc.
@@ -52,12 +55,19 @@ class World:
             self.indicator_history = np.empty( (0, len(indicators)) )
 
         self.n_agents = n_agents
+        self.control_agents = control_agents
 
         self.forces = forces
         self.indicators = indicators
         self.integrator = integrator
 
         self.timestep_length = timestep
+
+        self.context = context
+        self.constraints = constraints
+
+        # saved material to help with indicator computation
+        self.scratch_material = {}
 
         self.current_timestep = None
         if initial_state is not None:
@@ -104,7 +114,16 @@ class World:
         return self.history[(self.current_timestep*self.n_agents) : ((self.current_timestep+1)*self.n_agents), :]
     
     def get_history(self):
+        '''
+        Returns full state evolution time series.
+        '''
         return self.history
+    
+    def get_indicator_history(self):
+        '''
+        Returns full indicator time series.
+        '''
+        return self.indicator_history
     
     def get_full_history_with_indicators(self):
         '''
@@ -131,21 +150,18 @@ class World:
             # Initialize matrix to hold forces keyed to id
             force_matrix = np.zeros ( (state.shape[0], self.spatial_dims) )
             for force in self.forces:
-                force_matrix = force_matrix + force(state)
-                '''
-                convert world state to pairwise distances
-                corrupt pairwise distances (sensor emulation, likely gaussian noise)
-                corrupt world state (positions) (gaussian noise, GPS)
-                call hcl routine with corrupted pairwise distances, positions (on mothership)
-                get back estimated world state
-                apply sph (centralized) on estimated world state
-                '''
+                force_matrix = force_matrix + force(self, self.context)
 
             ## Advance the timestep itself
             state[:,0] += self.timestep_length
 
             ## Integrate forces over timestep
             self.integrator(state, force_matrix, self.timestep_length)
+
+            ## Apply any constraints
+            if self.constraints:
+                for constraint in self.constraints:
+                    constraint(self, state)
 
             # state is now new state, so append it to the history and advance the internal
             # timestep counter
@@ -154,5 +170,5 @@ class World:
             ## Compute indicators
             indicator_results = np.empty( (1, len(self.indicators)) )
             for j in range(len(self.indicators)):
-                indicator_results[0, j] = self.indicators[j](state)
+                indicator_results[0, j] = self.indicators[j](self)
             self._add_state_to_indicators(indicator_results)
