@@ -50,13 +50,16 @@ def trace_trajectories(world, fig, ax, fig_title=''):
             ax=ax[0],
 
         )'''
-    
-    sns.lineplot(
-                x=world.history[::100, 0],
-                y=world.indicator_history[::100, 0],
-                ax=ax[1],
-                legend=False
-    )
+
+    try:
+        sns.lineplot(
+                    x=world.history[::100, 0],
+                    y=world.indicator_history[::100, 0],
+                    ax=ax[1],
+                    legend=False
+        )
+    except:
+        pass
     
     fig.canvas.set_window_title(fig_title)
     fig.canvas.draw_idle()
@@ -225,15 +228,22 @@ def generate_cost_plot(model,
     cost_data = np.zeros( (len(combinations), len(ordered_keys)+1) )
 
     for k in tqdm(index_range):
+
         x, y = data[k]
+
         for j in range(len(combinations)):
+
             cost_data[j, 1:3] = combinations[j]
+
             for i in range(len(ordered_keys)):
                 model.__getattr__(ordered_keys[i]).data = torch.Tensor([combinations[j][i]])
+            
             y_pred = model(*x)
             y_pred = y_pred.detach()
-            if y.ndim > 1 and int(random.randint(0, len(combinations)/2)) == int(j/2):
+
+            if y.ndim > 1 and int(random.randint(0, int(len(combinations)/2))) == int(j/2):
                 trace_predicted_vs_real_trajectories(y, y_pred, str(combinations[j]), *set_up_figure())
+            
             cost_data[j,0] = np.add(
                 cost_data[j,0],
                 np.sum(
