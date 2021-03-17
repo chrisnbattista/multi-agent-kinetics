@@ -9,6 +9,7 @@ import seaborn as sns
 import torch
 import numpy as np
 from tqdm import tqdm
+import matplotlib.patches as patches
 
 import itertools, random
 
@@ -210,9 +211,9 @@ def render_1d_orbit_state(world,
                     agent_colors=None,
                     agent_sizes=None):
 
-    print(sample_data)
-    print(sample_data.shape)
-    print(sample_data[:,2])
+    # print(sample_data)
+    # print(sample_data.shape)
+    # print(sample_data[:,2])
 
     ax[0].clear()
 
@@ -235,37 +236,28 @@ def render_1d_orbit_state(world,
             color.append('k')
     
     p = sns.scatterplot(
-            x=sample_data[:,2],
+            x=world[:,3],
             y=[0,0,0,0,0],
+            c= color,
             #c=agent_colors, ## these are the offending lines.
             #s=agent_sizes,  ## maybe check to see if the arguments are None higher up in this function, and initialize them if so?
             ax=ax[0]         ## or, just remove if not needed, or, use if/else to only pass them if not None
     )
+    
+    # control x and y limits
+    p.set_xlim([-30, 30])
+    p.set_ylim([-30, 30])
+    p.set_aspect('equal')
+    
 
     r = h
     for c in range (0, 5):
-        plt.Circle((world[c, 3], 0), r, c='o')
+        #fig, ax = plt.subplots()
+        circle1 = plt.Circle((world[c,3], 0), r, color="orange", fill=False)
+        p.add_artist(circle1)
         if world[c, 3] == maximum:
-            plt.Circle((world[c, 3], 0), 10, c='g')
-
-    
-
-    # control x and y limits
-    #p.set_xlim([minimum - 50, maximum + 50])
-    #p.set_ylim([-50, 50])
-
-    # 2/3/21 stuff
-    # data = np.array([
-    #     [-1, 0],
-    #     [-0.5, 0],
-    #     [0, 0],
-    #     [0.5, 0],
-    #     [1, 0],
-    # ])
-
-    # color = ['k', 'k', 'k', 'k', 'b']
-    
-    # sns.scatterplot(data[:, 0], data[:, 1], c = color, ax = ax[0])
+            circle2 = plt.Circle((world[c,3], 0), r, color="green", fill=False)
+            p.add_artist(circle2)
 
     if show_indicators and indicators:
         n_indicators = indicators.shape[1]
