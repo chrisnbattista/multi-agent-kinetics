@@ -18,6 +18,9 @@ def integrate_rect_world(world, force_matrix, timestep):
     if world.shape[1] == 7:
         vel_idx = slice(5,7)
         pos_idx = slice(3,5)
+    elif world.shape[1] == 9:
+        vel_idx = slice(6,9)
+        pos_idx = slice(3,6)
     else:
         vel_idx = slice(4,4)
         pos_idx = slice(3,3)
