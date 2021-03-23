@@ -336,8 +336,6 @@ def render_1d_orbit_state(world,
     p.set_ylim([-30, 30])
     p.set_aspect('equal')
     
-<<<<<<< HEAD
-
     r = h
     for c in range (0, 5):
         #fig, ax = plt.subplots()
@@ -346,9 +344,6 @@ def render_1d_orbit_state(world,
         if world[c, 3] == maximum:
             circle2 = plt.Circle((world[c,3], 0), r, color="green", fill=False)
             p.add_artist(circle2)
-=======
-    # sns.scatterplot(data[:, 0], data[:, 1], c = color, ax = ax)
->>>>>>> 5c41f3ce478293a5d3b429326fdf0ec2bd1f340e
 
     if show_indicators and indicators:
         n_indicators = indicators.shape[1]
