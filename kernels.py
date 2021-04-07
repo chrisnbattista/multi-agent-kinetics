@@ -2,6 +2,11 @@
 # goal: effectively make interactions local, weighting by distance essentially
 
 import math
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from scipy.stats import norm
+from . import viz, projections
 
 def quadratic(r, h):
     """Implements a quadratic kernel function with support radius of 2h."""
@@ -69,4 +74,33 @@ def cubic_spline_grad_double(r, sigma=None, h=1):
     elif (r >= h) and (r <= 2*h):
         return sigma * (12 - 6*r/h)
     else:
-        return sigma * 0.5 * (9*r/h - 6)
+        return sigma**3 * 0.5 * (9*r/h - 6)
+
+def gaussian_function(r, h = 1, a = 1, b = 0, c = 1, 
+                    show_indicators=False,
+                    indicators=None,
+                    indicator_labels=None,
+                    fig_title=None,
+                    agent_colors=None,
+                    agent_sizes=None):
+    y = r/h
+    value = a*np.exp((-((y-b)**2)/2*(c)**2))
+    if r > h:
+        print("0")
+        return 0
+    elif r <= h:
+        print('{:.4f}'.format(value))
+        print("Plotting Gaussian bell curve")
+        fig, ax = viz.set_up_figure(title="Gaussian Curve")
+        ax[0].clear()
+        x_axis = np.arange(-10, 10, 0.001)
+        plt.plot(x_axis, norm.pdf(x_axis,b,c))
+        fig.canvas.draw_idle()
+        fig.canvas.start_event_loop(10)
+        return value
+    
+    
+
+    
+    
+
