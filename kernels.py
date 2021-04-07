@@ -6,7 +6,14 @@ import math
 def quadratic(r, h):
     """Implements a quadratic kernel function with support radius of 2h."""
     if r/h < 2:
-        return 15 / (16*math.pi * h**4) * (r/h/2 - 1)
+        return 15 / (16 * math.pi * h**3) * ((r/h)**2 / 4 - r/h + 1)
+    else:
+        return 0
+
+def quadratic_grad(r, h):
+    """Implements the gradient of a quadratic kernel function with support radius of 2h."""
+    if r/h < 2:
+        return 15 / (16 * math.pi * h**4) * (r/h/2 - 1)
     else:
         return 0
 
@@ -37,12 +44,12 @@ def cubic_spline_grad(r, sigma=None, h=1):
     '''
 
     if sigma == None:
-        sigma = 10/(7*math.pi*h**2)
+        sigma = 1/(math.pi*h**3)
 
     if r > 2*h:
         return 0
     elif (r >= h) and (r <= 2*h):
-        return sigma * -3*(r/h - 2)**2
+        return sigma / 4 * -3*(r/h - 2)**2
     else:
         return sigma * 0.75 * r/h * (3*r/h - 4)
 

@@ -6,14 +6,13 @@ two_d_video_images = []
 import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
-import torch
 import numpy as np
 import scipy
 from tqdm import tqdm
 
 import itertools, random
 
-from . import projections
+from . import projections, worlds
 
 
 floating_plots = {}
@@ -37,10 +36,16 @@ def set_up_figure(title='Plot', plot_type='2d+ind'):
     #                         figsize=(6, 7.5)
     #     )
     # elif plot_type == '2d_proj_orbit':
-    fig, ax = plt.subplots(1,1,
-                        ##gridspec_kw={'height_ratios': [4, 0]},
-                        figsize=(6, 6)
-    )
+    if plot_type == '3d_plot':
+        fig = plt.figure(figsize=(6, 6))
+        ax = fig.add_subplot(111,
+                            projection='3d'
+        )
+    else:
+        fig, ax = plt.subplots(1,1,
+                            ##gridspec_kw={'height_ratios': [4, 0]},
+                            figsize=(6, 6)
+        )
     fig.canvas.set_window_title(title)
     return fig, ax
 
@@ -131,38 +136,143 @@ def render_2d_orbit_state(world,
     '''
 
     state = world.get_state()
+    n_sph = sum(world.context['sph_active'])
 
     ax.clear()
-    ax.plot(
+    """ ax.plot(
         (-25, 25),
         (0, 0),
         c='g'
-    )
+    ) """
 
-    n_sph = sum(world.context['sph_active'])
+    if h:
+        pos = worlds.pos[world.spatial_dims]
+        kd_tree = scipy.spatial.cKDTree(state[:,pos])
+        h_pairs = kd_tree.query_pairs(r=h*2)
+        if h_pairs:
+            lines = []
+            for pair in h_pairs:
+                if pair[0] < n_sph or pair[1] < n_sph:
+                    lines.append((state[pair[0],3:5], state[pair[1],3:5]))
+            lc = matplotlib.collections.LineCollection(lines, colors='lightgrey')
+            ax.add_collection(lc)
 
     p = sns.scatterplot(
-            x=state[:n_sph+1,3],
-            y=state[:n_sph+1,4],
-            c=agent_colors[:n_sph+1],
+            x=state[:n_sph,3],
+            y=state[:n_sph,4],
+            c=agent_colors[:n_sph],
             marker='o',
             ##s=agent_sizes,
             ax=ax
     )
     p = sns.scatterplot(
-            x=state[n_sph+1:,3],
-            y=state[n_sph+1:,4],
-            c=agent_colors[n_sph+1:],
+            x=state[n_sph:,3],
+            y=state[n_sph:,4],
+            c=agent_colors[n_sph:],
             marker='^',
             ##s=agent_sizes,
             ax=ax
     )
 
-    #sum(world.context['sph_active'])
+    if show_indicators:
+        indicators = world.get_indicator_history()
+        n_indicators = len(world.indicators)
+        for ind in range(n_indicators):
+            i_fig = get_floating_plot(indicator_labels[ind][0])
+            i_ax = i_fig.gca()
+            i_ax.clear()
+            sns.lineplot(
+                x=np.linspace(0, world.current_timestep*world.timestep_length, world.current_timestep),
+                y=indicators[:world.current_timestep, ind],
+                ax=i_ax,
+                legend=False
+            )
 
-    if h:
+            i_ax.set_xlabel(indicator_labels[ind][1])
+            i_ax.set_ylabel(indicator_labels[ind][2])
+            i_fig.tight_layout()
+            if indicator_labels:
+                i_ax.legend(loc='lower right', labels=[indicator_labels[ind][0]])
+    
+    if fig_title != None:
+        fig.canvas.set_window_title(fig_title)
+    
+    note = 'Sim time: {:.2f} ksec | h: {:.2f}'.format(world.current_timestep*world.timestep_length, h)
+    if not len(fig.texts):
+        fig.text(0.01, 0.01, note)
+    else:
+        fig.texts[0].set_text(note)
+
+    ax.set(xlim=(-5, 5), ylim=(-5, 5))
+
+    ax.set_xlabel('orbital plane basis 1 (km)')
+    ax.set_ylabel('orbital plane basis 2 (km)')
+
+    ##two_d_video_images.append(ax.get_images()[0])
+
+    fig.canvas.draw_idle()
+    fig.canvas.start_event_loop(0.01)
+
+def render_3d_orbit_state(world,
+                    fig,
+                    ax,
+                    show_indicators=False,
+                    indicator_labels=None,
+                    fig_title=None,
+                    agent_colors=None,
+                    agent_sizes=None,
+                    agent_markers=None,
+                    h=None,
+                    t=0):
+    '''
+    Display the particles described in the world array onto the figure and axis provided.
+    Activates the plt event loop so that the figure is displayed.
+    Also, display the indicator timeseries below if present.
+
+    Expects:
+        world object
+        plt figure
+        axes object
+    '''
+
+    state = world.get_state()
+
+    ax.clear()
+
+    n_sph = sum(world.context['sph_active'])
+    ax.scatter(
+        state[:n_sph,3],
+        state[:n_sph,4],
+        state[:n_sph,5],
+        c=agent_colors[:n_sph]
+    )
+    ax.scatter(
+        state[n_sph:,3],
+        state[n_sph:,4],
+        state[n_sph:,5],
+        c=agent_colors[n_sph:],
+        marker='^'
+    )
+    # p = sns.scatterplot(
+    #         x=state[:n_sph,3],
+    #         y=state[:n_sph,4],
+    #         c=agent_colors[:n_sph],
+    #         marker='o',
+    #         ##s=agent_sizes,
+    #         ax=ax
+    # )
+    # p = sns.scatterplot(
+    #         x=state[n_sph:,3],
+    #         y=state[n_sph:,4],
+    #         c=agent_colors[n_sph:],
+    #         marker='^',
+    #         ##s=agent_sizes,
+    #         ax=ax
+    # )
+
+    if False:#h:
         kd_tree = scipy.spatial.cKDTree(state[:,3:5])
-        h_pairs = kd_tree.query_pairs(r=h)
+        h_pairs = kd_tree.query_pairs(r=h*2)
         if h_pairs:
             lines = []
             for pair in h_pairs:
@@ -200,10 +310,11 @@ def render_2d_orbit_state(world,
     else:
         fig.texts[0].set_text(note)
 
-    ax.set(xlim=(-25, 25), ylim=(-25, 25))
+    ax.set(xlim=(2888-25, 2888+25), ylim=(5890-25, 5890+25), zlim=(1530-25,1530+25))
 
     ax.set_xlabel('orbital plane basis 1 (km)')
     ax.set_ylabel('orbital plane basis 2 (km)')
+    ax.set_zlabel('orbital plane basis 3 (km)')
 
     ##two_d_video_images.append(ax.get_images()[0])
 
@@ -228,7 +339,14 @@ def render_projected_2d_orbit_state(
 
     state = world.get_state()
 
-    transformed_world = np.apply_along_axis(lambda p: projections.mercator_projection(p=p[3:5]+world.context['cumulative_recentering'], r=orbit_radius), 1, state/scaling_factor)
+    pos = worlds.pos[world.spatial_dims]
+
+    transformed_world = np.apply_along_axis(
+        lambda p: projections.mercator_projection(
+            p=p[pos]+world.context['cumulative_recentering'],
+            r=orbit_radius),
+            1,
+            state/scaling_factor)
 
     for i in (0,1):
         ax.set_yticklabels([])
