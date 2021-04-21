@@ -9,7 +9,39 @@ import scipy
 import numexpr as ne
 from sklearn.preprocessing import normalize
 import itertools
-from . import properties, kernels
+from . import properties, kernels, worlds
+
+
+
+def get_kernel_values(pairwise_differences, kernel_func, **kwargs):
+    distances = scipy.spatial.distance.squareform(
+            scipy.spatial.distance.pdist(
+                pairwise_differences
+            )
+    )[:,i]
+    return np.vectorize(lambda ri, **kwargs: kernel_func(ri,**kwargs))(distances)
+
+def apply_interaction_kernel(world, kernel_func, agent_indexes=None, context=None, **kwargs):
+    '''Applies the specified kernel pairwise between all agents, or between certain ones if agent_indexes is specified.
+    
+    Ref Lu et al 2018.'''
+
+    state = world.get_state()
+    pos = worlds.pos[world.spatial_dims]
+    if agent_indexes == None:
+        agent_indexes = slice(state.shape[0])
+
+    pairwise_differences = state[agent_indexes, pos] - state[agent_indexes, pos, None]
+    print(pairwise_differences)
+
+    kernel_values = get_kernel_values(pairwise_differences, kernel_func)
+    print(kernel_values)
+
+    print((kernel_values * pairwise_differences).shape)
+
+    return kernel_values * pairwise_differences
+
+
 
 def lennard_jones_potential(epsilon, sigma, r):
     return ne.evaluate('( (4 * epsilon * sigma**12)/r**12 - (4 * epsilon * sigma**6)/r**6 )')
