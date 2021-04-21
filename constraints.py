@@ -1,28 +1,32 @@
 import numpy as np
+from . import worlds
 
 
 
 
-
-def recenter_on_agent(world, state, agent_i):
+def recenter_on_agent(world, state, agent_i, context=None):
     '''
     Moves all other agents to keep the plane centered on the agent with index agent_i.
     '''
 
+    pos = worlds.pos[context['spatial_dims']]
+
     if not 'cumulative_recentering' in world.context:
-        world.context['cumulative_recentering'] = np.zeros((world.spatial_dims,))
+        world.context['cumulative_recentering'] = np.zeros((context['spatial_dims'],))
     
-    offset = state[agent_i,3:5]
+    offset = state[agent_i,pos]
     
     world.context['cumulative_recentering'] += offset
-    state[:, 3:5] = state[:, 3:5] - offset
+    state[:, pos] = state[:, pos] - offset
 
-def linear_motion(world, state, velocity):
+def linear_motion(world, state, velocity, context=None):
     '''
     Moves all agents a linear offset (velocity) each unit time.
     '''
 
-    state[:,3:5] += velocity * world.timestep_length
+    pos = worlds.pos[context['spatial_dims']]
+
+    state[:,pos] += velocity * world.timestep_length
 
 def constrain_to_orbit(world, state):
     '''

@@ -16,8 +16,24 @@ schemas = {
     '2d': ('t', 'id', 'm', 'b_1', 'b_2', 'v_1', 'v_2'),
     '3d': ('t', 'id', 'm', 'b_1', 'b_2', 'b_3', 'v_1', 'v_2', 'v_3')
 }
-
-
+pos = [
+    None,
+    slice(3,4),
+    slice(3,5),
+    slice(3,6)
+]
+vel = [
+    None,
+    slice(4,5),
+    slice(5,7),
+    slice(6,9)
+]
+mass = [
+    None,
+    2,
+    2,
+    2
+]
 
 
 
@@ -146,6 +162,7 @@ class World:
         for i in range(steps):
 
             state = np.copy(self.get_state()) # state is initially old state
+
             ## Calculate forces
             # Initialize matrix to hold forces keyed to id
             force_matrix = np.zeros ( (state.shape[0], self.spatial_dims) )
@@ -156,12 +173,12 @@ class World:
             state[:,0] += self.timestep_length
 
             ## Integrate forces over timestep
-            self.integrator(state, force_matrix, self.timestep_length)
+            self.integrator(self, state, force_matrix, self.timestep_length)
 
             ## Apply any constraints
             if self.constraints:
                 for constraint in self.constraints:
-                    constraint(self, state)
+                    constraint(self, state, self.context)
 
             # state is now new state, so append it to the history and advance the internal
             # timestep counter
