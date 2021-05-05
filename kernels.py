@@ -67,7 +67,6 @@ def cubic_spline_grad_double(r, sigma=None, h=1):
     elif (r >= h) and (r <= 2*h):
         return sigma * (12 - 6*r/h)
     else:
-<<<<<<< HEAD
         return sigma**3 * 0.5 * (9*r/h - 6)
 
 def gaussian_function(r, h = 1, a = 1, b = 0, c = 1, 
@@ -98,6 +97,4 @@ def gaussian_function(r, h = 1, a = 1, b = 0, c = 1,
     
     
 
-=======
         return sigma * 0.5 * (9*r/h - 6)
->>>>>>> 5c41f3ce478293a5d3b429326fdf0ec2bd1f340e

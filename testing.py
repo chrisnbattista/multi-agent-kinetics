@@ -1,8 +1,11 @@
+import matplotlib
+import matplotlib.pyplot as plt
 from multi_agent_kinetics import projections, kernels, viz
+from inspect import getmembers, isfunction
+from kernels import quadratic, cubic_spline, cubic_spline_grad, cubic_spline_grad_double, gaussian_function
 
-print("Plotting Gaussian bell curve")
-fig, ax = viz.set_up_figure(title="Gaussian curve")
+plots = []
+plot = plt.figure()
+plots.append(plot)
 
-ax[0].clear()
 
-kernels.gaussian_function(0.5)
