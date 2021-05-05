@@ -121,7 +121,7 @@ def pairwise_world_lennard_jones_force(world, epsilon, sigma, **kwargs):
 #     return potential_matrix
 
 
-def viscous_damping_force(world, c, **kwargs):
+def viscous_damping_force(world, c, context=None, **kwargs):
     '''
     F_damping = -cv
     '''
@@ -137,7 +137,7 @@ def viscous_damping_force(world, c, **kwargs):
     )
 
 
-def spline_attractor(world, lamb, target=None, h=1, **kwargs):
+def spline_attractor(world, lamb, target=None, h=1, context=None, **kwargs):
 
     state = world.get_state()
     pos = worlds.pos[kwargs['context']['spatial_dims']]
@@ -161,7 +161,7 @@ def spline_attractor(world, lamb, target=None, h=1, **kwargs):
     return F
  
 
-def sum_world_gravity_potential(world, lamb, **kwargs):
+def sum_world_gravity_potential(world, lamb, context=None, **kwargs):
     '''
     '''
 
