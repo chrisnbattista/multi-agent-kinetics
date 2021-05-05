@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from . import worlds
 
 ## Simple scalar integration functions
 
@@ -12,29 +13,23 @@ def double_integrate_rect(delta_t, initial_value):
 
 ## World level integration functions
 
-def integrate_rect_world(world, force_matrix, timestep):
+def integrate_rect_world(world, state, force_matrix, timestep):
     '''
     '''
-    if world.shape[1] == 7:
-        vel_idx = slice(5,7)
-        pos_idx = slice(3,5)
-    elif world.shape[1] == 9:
-        vel_idx = slice(6,9)
-        pos_idx = slice(3,6)
-    else:
-        vel_idx = slice(4,4)
-        pos_idx = slice(3,3)
+
+    pos = worlds.pos[world.spatial_dims]
+    vel = worlds.vel[world.spatial_dims]
 
     # Velocity from force
     # F = ma = m * derivative(v)
     # v = integral(F) / m
     velocity_matrix = np.divide(
         integrate_rect(timestep, force_matrix),
-        world[:,2,None]
+        state[:,2,None]
     )
-    world[:, vel_idx] += velocity_matrix
+    state[:, vel] += velocity_matrix
 
     # Displacement from velocity
-    world[:, pos_idx] += integrate_rect(timestep, world[:, vel_idx])
+    state[:, pos] += integrate_rect(timestep, state[:, vel])
 
-    return world
+    return state

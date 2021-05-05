@@ -9,7 +9,39 @@ import scipy
 import numexpr as ne
 from sklearn.preprocessing import normalize
 import itertools
-from . import properties, kernels
+from . import properties, kernels, worlds
+
+
+
+def get_kernel_values(pairwise_differences, kernel_func, **kwargs):
+    distances = scipy.spatial.distance.squareform(
+            scipy.spatial.distance.pdist(
+                pairwise_differences
+            )
+    )[:,i]
+    return np.vectorize(lambda ri, **kwargs: kernel_func(ri,**kwargs))(distances)
+
+def apply_interaction_kernel(world, kernel_func, agent_indexes=None, context=None, **kwargs):
+    '''Applies the specified kernel pairwise between all agents, or between certain ones if agent_indexes is specified.
+    
+    Ref Lu et al 2018.'''
+
+    state = world.get_state()
+    pos = worlds.pos[world.spatial_dims]
+    if agent_indexes == None:
+        agent_indexes = slice(state.shape[0])
+
+    pairwise_differences = state[agent_indexes, pos] - state[agent_indexes, pos, None]
+    print(pairwise_differences)
+
+    kernel_values = get_kernel_values(pairwise_differences, kernel_func)
+    print(kernel_values)
+
+    print((kernel_values * pairwise_differences).shape)
+
+    return kernel_values * pairwise_differences
+
+
 
 def lennard_jones_potential(epsilon, sigma, r):
     return ne.evaluate('( (4 * epsilon * sigma**12)/r**12 - (4 * epsilon * sigma**6)/r**6 )')
@@ -89,48 +121,47 @@ def pairwise_world_lennard_jones_force(world, epsilon, sigma, **kwargs):
 #     return potential_matrix
 
 
-def viscous_damping_force(world, c, **kwargs):
+def viscous_damping_force(world, c, context=None, **kwargs):
     '''
     F_damping = -cv
     '''
 
     state = world.get_state()
+    vel = worlds.vel[world.spatial_dims]
 
-    if state.shape[1] == 7:
-        null_forces = np.zeros((world.n_agents,2))
-        return np.where(
-            np.c_[world.context['damping_active']],
-            -c * state[:, 5:7],
-            null_forces
-        )
-        ##return -c * state[:, 5:7]
-    else:
-        return -c * state[:, 4][:, np.newaxis]
+    null_forces = np.zeros((world.n_agents,world.spatial_dims))
+    return np.where(
+        np.c_[world.context['damping_active']],
+        -c * state[:, vel],
+        null_forces
+    )
 
 
-def linear_attractor(world, lamb, target=None, **kwargs):
-    '''
-    Exerts a constant gravitational force from the origin - assuming
-    the ground level simplified form of constant acceleration gravity.
-    '''
+def spline_attractor(world, lamb, target=None, h=1, context=None, **kwargs):
 
     state = world.get_state()
+    pos = worlds.pos[kwargs['context']['spatial_dims']]
+
+    null_forces = np.zeros((world.n_agents, kwargs['context']['spatial_dims']))
+
+    r = scipy.spatial.distance.squareform(
+            scipy.spatial.distance.pdist(state[:,pos])
+        )[:,target]
 
     if target != None:
-        null_forces = np.zeros((world.n_agents,2))
-        return np.where(
+        F = np.where(
             np.c_[world.context['following_active']],
-            (-lamb * (state[:, 3:5] - state[target, 3:5])),
+            lamb * np.vectorize(lambda r: kernels.cubic_spline_grad(r=r, h=h))(r)[:, None] * normalize((state[:, pos] - state[target, pos])),
             null_forces
         )
     else:
-        if state.shape[1] == 7:
-            return -lamb / state[:, 2, None] * state[:, 3:5]
-        elif state.shape[1] == 5:
-            return (-lamb / state[:, 2] * state[:, 3])[:, np.newaxis]
+        return null_forces
 
+    ##print(F)
+    return F
+ 
 
-def sum_world_gravity_potential(world, lamb, **kwargs):
+def sum_world_gravity_potential(world, lamb, context=None, **kwargs):
     '''
     '''
 
@@ -141,7 +172,48 @@ def sum_world_gravity_potential(world, lamb, **kwargs):
     return G
 
 
-def pressure_force(i, state, pressure, h=1, context=None):
+def world_pressure_force(world, reference_density, h=1, gamma=1, context=None):
+
+    n_sph = sum(context['sph_active'])
+    state = world.get_state()
+    pos = worlds.pos[world.spatial_dims]
+    mass = worlds.mass[world.spatial_dims]
+
+    c = 1481 # m / s
+    B = c**2 * reference_density
+    particle_densities = properties.density_all(world, h)
+    particle_pressures = B * ( (particle_densities / reference_density)**gamma - 1)
+    particle_pressures = np.nan_to_num(
+                                        particle_pressures,
+                                        posinf=0,
+                                        neginf=0
+                                        )
+
+    P_over_rho_sq = np.divide(particle_pressures, particle_densities**2)
+    P_over_rho_sq = np.nan_to_num(
+                                        P_over_rho_sq,
+                                        posinf=0,
+                                        neginf=0
+                                        )
+    
+    F = np.zeros((world.n_agents, world.spatial_dims))
+    for i in range(n_sph):
+        term_1 = P_over_rho_sq[i]
+        term_2 = P_over_rho_sq
+        offsets = state[:, pos] - (state[i, pos])
+        r = scipy.spatial.distance.squareform(
+            scipy.spatial.distance.pdist(offsets)
+        )[:,i]
+        magnitudes = (-1) \
+                    * (term_1 + term_2) \
+                    * np.vectorize(lambda ri: kernels.quadratic_grad(ri,h))(r)
+                    ##* state[:n_sph,mass] \ # not using this as we want F not dv_dt
+        directions = normalize(offsets)
+        F[i] = np.sum(magnitudes[:,None] * directions)
+
+    return F
+
+"""def pressure_force(i, world, pressure, h=1, context=None):
     '''
     Computes the pressure force for one particle from the world state
     i = particle index
@@ -149,82 +221,45 @@ def pressure_force(i, state, pressure, h=1, context=None):
     returns: [force_x, force_y]
     '''
 
-    # isolate particle position data
-    if state.shape[1] == 7:
-        coords = state[:,3:5]
-        spatial_dims = 2
-        p_dists = scipy.spatial.distance.pdist(coords)
-    elif state.shape[1] == 9:
-        coords = state[:,3:6]
-        spatial_dims = 3
-        p_dists = scipy.spatial.distance.pdist(coords)
-    else:
-        coords = state[:,3]
-        spatial_dims = 1
-        ##print(list(itertools.combinations(coords, 2)))
+    state = world.get_state()
+
+    pos = worlds.pos[context['spatial_dims']]
+    coords = state[:,pos]
+    if context['spatial_dims'] == 1:
         p_dists = [c[0] - c[1] for c in itertools.combinations(coords, 2)]
-        ##print(p_dists)
-    
+    else:
+        p_dists = scipy.spatial.distance.pdist(coords)    
 
     dists_i = scipy.spatial.distance.squareform(
         p_dists
     )[:,i]
-    k_vals = [kernels.quadratic(d, h=h) for d in dists_i]
-    print(k_vals)
+    k_vals = [kernels.quadratic_grad(d, h=h) for d in dists_i]
 
     if (context is not None) and ('sph_active' in context) and (not context['sph_active'][i]):
-        ##print(f"skipping agent {i}")
-        return np.zeros((spatial_dims,))
-    if all(not k for k in k_vals): return np.zeros((spatial_dims,))
+        return np.zeros((context['spatial_dims'],))
+    if all(not k for k in k_vals): return np.zeros((context['spatial_dims'],))
 
-    
     pairwise_force_mags = np.zeros(state.shape[0])
 
-
-    densities = properties.density_all(state, h=h)
+    densities = properties.density_all(world, h=h)
     own_density = densities[i]
     densities[i] = 0
-    densities = np.ma.masked_where(densities<0.0001, densities)
 
-    ##print("DENS")
-    ##print(densities)
-
-    # https://lucasschuermann.com/writing/implementing-sph-in-2d
     pressures = np.full(state.shape[0], pressure)
-
-    ##print(pressures)
 
     # m * p / rho matrix
     pairwise_force_mags = \
         np.multiply((-1), state[:,2]**2) * k_vals
-    #print(pairwise_force_mags)
     pairwise_force_mags = \
         np.multiply(
             (pressures[i] / own_density**2) + (pressures / densities**2),
             pairwise_force_mags
         )
     pairwise_force_mags = np.ma.filled(pairwise_force_mags, 0)
-    
-    # pairwise_force_mags = \
-    #     np.ma.filled(
-    #         np.multiply(
-    #             pairwise_force_mags,
-    #             pressures[i] / np.ma.masked_equal(densities**2, 0)
-    #         ),
-    #         0
-    #     )
-    #print(pairwise_force_mags)
-        
-        
-        # * (pressures / densities**2) + (pressures[i] / densities[i]**2),
-       #     k_vals
-      #  )
 
-    if spatial_dims == 2 or spatial_dims == 3:
+    if context['spatial_dims'] > 1:
         directions = normalize((coords[:, np.newaxis] - coords)[i], axis=1)
-        ##print(pairwise_force_mags)
         forces = np.sum(directions * pairwise_force_mags[:, None], axis=0)
-        ##print(forces)
     else:
         directions = 1 * np.sign((coords[:, np.newaxis] - coords)[i])
         forces = np.sum(
@@ -249,12 +284,12 @@ def world_pressure_force(world, pressure, h=1, context=None):
 
     force_accumulator = np.zeros((state.shape[0], world.spatial_dims))
     for i in range(len(world.control_agents)):
-        ego_state = state.copy()
+        ##ego_state = state.copy()
         ##print(world.control_agents[i].X_update)
         ##np.put(ego_state, [[i, i], [3,4]], world.control_agents[i].X_update[:-1])
         force_accumulator[i,:] += pressure_force(
                                                     i,
-                                                    ego_state,
+                                                    world,
                                                     pressure,
                                                     h=h,
                                                     context=context
@@ -316,7 +351,7 @@ def world_viscosity_force(world, h=1, context=None):
     for i in range(state.shape[0]):
         force_accumulator[i,:] += viscosity_force(i, state, h=h)
     
-    return force_accumulator
+    return force_accumulator """
 
 def swarm_leader_force(world, leader_force=np.zeros((2,)), context=None):
     '''
