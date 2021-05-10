@@ -16,6 +16,12 @@ schemas = {
     '2d': ('t', 'id', 'm', 'b_1', 'b_2', 'v_1', 'v_2'),
     '3d': ('t', 'id', 'm', 'b_1', 'b_2', 'b_3', 'v_1', 'v_2', 'v_3')
 }
+ID = [
+    None,
+    1,
+    1,
+    1
+]
 pos = [
     None,
     slice(3,4),
@@ -43,14 +49,14 @@ class World:
                 initial_state=None,
                 spatial_dims=2,
                 n_agents=0,
-                control_agents=[],
                 n_timesteps=None,
                 timestep=0.0001,
                 forces=[],
+                constraints=[],
+                controllers=[],
                 indicators=[],
                 integrator=integrators.integrate_rect_world,
                 context=None,
-                constraints=None,
                 **kwargs):
         '''
         Create a new World object with fixed parameters: forces, indicators, fixed timestep, etc.
@@ -71,16 +77,17 @@ class World:
             self.indicator_history = np.empty( (0, len(indicators)) )
 
         self.n_agents = n_agents
-        self.control_agents = control_agents
-
         self.forces = forces
-        self.indicators = indicators
+        self.constraints = constraints
+        self.controllers = controllers
+
         self.integrator = integrator
+        
+        self.indicators = indicators
 
         self.timestep_length = timestep
 
         self.context = context
-        self.constraints = constraints
 
         # saved material to help with indicator computation
         self.scratch_material = {}
@@ -166,8 +173,12 @@ class World:
             ## Calculate forces
             # Initialize matrix to hold forces keyed to id
             force_matrix = np.zeros ( (state.shape[0], self.spatial_dims) )
+            # Apply natural forces
             for force in self.forces:
                 force_matrix = force_matrix + force(self, self.context)
+            # Apply control forces
+            for controller in self.controllers:
+                force_matrix = force_matrix + controller.control()
 
             ## Advance the timestep itself
             state[:,0] += self.timestep_length
