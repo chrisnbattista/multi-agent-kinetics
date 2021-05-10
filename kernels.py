@@ -104,3 +104,7 @@ def gaussian_function(r, h = 1, a = 1, b = 0, c = 1,
     
     
 
+<<<<<<< HEAD
+        return sigma * 0.5 * (9*r/h - 6)
+=======
+>>>>>>> d565bdd27d4220c9296c977a535262a8bea33570

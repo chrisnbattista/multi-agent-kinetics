@@ -33,7 +33,7 @@ def run_random_circle_lj_sim(params, seed):
         n_timesteps=params['n_timesteps'],
         timestep=params['timestep'],
         forces=[
-            lambda world: forces.pairwise_world_lennard_jones_force(world, epsilon=params['epsilon'], sigma=params['sigma'])
+            lambda world, context: forces.pairwise_world_lennard_jones_force(world, epsilon=params['epsilon'], sigma=params['sigma'])
         ],
         indicators=[
             lambda world: indicators.kinetic_energy(world)

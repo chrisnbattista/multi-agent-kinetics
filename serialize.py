@@ -34,7 +34,7 @@ def save_world(world, root_path, params, seed):
         os.mkdir(save_dir)
 
     np.savetxt(f"{save_dir}/{seed}.csv",
-        world.get_full_history_with_indicators(),
+        world.get_history(),
         comments='',
         delimiter=',',
         fmt='%10.6f',
