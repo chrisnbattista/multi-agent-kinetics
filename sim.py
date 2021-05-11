@@ -1,15 +1,13 @@
-
-
-
-
-
-
 from . import indicators, experiments, forces, integrators, worlds
 import numpy as np
 import time, random
 
-
-
+def generate_generic_ic(agent_list):
+    '''Generate a worlds.World compatible initial_state based on a list of agent properties lists: mass, position, velocity. only compatible with 3D.'''
+    initial_state = np.zeros((len(agent_list), len(worlds.schemas['3d'])))
+    for i in range(len(agent_list)):
+        initial_state[i, :] = (0, i, *agent_list[i])
+    return initial_state
 
 def run_random_circle_lj_sim(params, seed):
     '''

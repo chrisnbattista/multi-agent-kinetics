@@ -1,17 +1,9 @@
-
-
-
-
-
-
 import numpy as np
 import scipy
 import numexpr as ne
 from sklearn.preprocessing import normalize
 import itertools
 from . import properties, kernels, worlds
-
-
 
 def get_kernel_values(pairwise_differences, kernel_func, **kwargs):
     distances = scipy.spatial.distance.squareform(
@@ -41,7 +33,23 @@ def apply_interaction_kernel(world, kernel_func, agent_indexes=None, context=Non
 
     return kernel_values * pairwise_differences
 
-
+def gravity(world, context, attractor=None, earth_mass=5.972e24):
+    '''Applies Newton's Law of gravity towards the point attractor.'''
+    state = world.get_state()
+    pos = state[:,worlds.pos[world.spatial_dims]]
+    if attractor == None: attractor = np.zeros((world.spatial_dims,))
+    diff = np.subtract(
+            attractor,
+            pos
+        )
+    # simple gravity:
+    return normalize(diff) * 9.81 * state[:,worlds.mass[3],None]
+    
+    # too smart for own good gravity:
+    # return (np.divide(
+    #         1,
+    #         (diff * np.linalg.norm(diff))
+    #     )* earth_mass * 9.81 * state[:,worlds.mass[3], None])
 
 def lennard_jones_potential(epsilon, sigma, r):
     return ne.evaluate('( (4 * epsilon * sigma**12)/r**12 - (4 * epsilon * sigma**6)/r**6 )')

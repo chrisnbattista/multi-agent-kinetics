@@ -1,15 +1,7 @@
 ## TO DO: Remove explicit indexes, change to lookups from object schema
 
-
-
-
-
 import numpy as np
 from . import experiments, integrators
-
-
-
-
 
 schemas = {
     '1d': ('t', 'id', 'm', 'b_1', 'v_1'),
@@ -40,8 +32,6 @@ mass = [
     2,
     2
 ]
-
-
 
 class World:
 
@@ -82,7 +72,7 @@ class World:
         self.controllers = controllers
 
         self.integrator = integrator
-        
+
         self.indicators = indicators
 
         self.timestep_length = timestep
@@ -178,7 +168,7 @@ class World:
                 force_matrix = force_matrix + force(self, self.context)
             # Apply control forces
             for controller in self.controllers:
-                force_matrix = force_matrix + controller.control()
+                force_matrix = force_matrix + controller.control(self, self.context)
 
             ## Advance the timestep itself
             state[:,0] += self.timestep_length
