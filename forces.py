@@ -33,7 +33,7 @@ def apply_interaction_kernel(world, kernel_func, agent_indexes=None, context=Non
 
     return kernel_values * pairwise_differences
 
-def gravity(world, context, attractor=None, earth_mass=5.972e24):
+def gravity(world, context, attractor=None):
     '''Applies Newton's Law of gravity towards the point attractor.'''
     state = world.get_state()
     pos = state[:,worlds.pos[world.spatial_dims]]
@@ -43,7 +43,11 @@ def gravity(world, context, attractor=None, earth_mass=5.972e24):
             pos
         )
     # simple gravity:
-    return normalize(diff) * 9.81 * state[:,worlds.mass[3],None]
+    altitude = np.linalg.norm(diff, axis=1) - 6371000
+    diff_normalized = normalize(diff)
+    return diff_normalized \
+            * properties.gravitational_constant(altitude=altitude)[:,None] \
+            * state[:,worlds.mass[3],None]
     
     # too smart for own good gravity:
     # return (np.divide(
@@ -53,7 +57,6 @@ def gravity(world, context, attractor=None, earth_mass=5.972e24):
 
 def lennard_jones_potential(epsilon, sigma, r):
     return ne.evaluate('( (4 * epsilon * sigma**12)/r**12 - (4 * epsilon * sigma**6)/r**6 )')
-
 
 def sum_world_lennard_jones_potential(world, epsilon, sigma):
     '''
