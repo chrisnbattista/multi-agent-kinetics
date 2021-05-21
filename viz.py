@@ -1,8 +1,4 @@
-
 two_d_video_images = []
-
-
-
 import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -10,11 +6,24 @@ import numpy as np
 import scipy
 from tqdm import tqdm
 import matplotlib.patches as patches
-
 import itertools, random
-
 from . import projections, worlds
 
+def set_up_3d_plot():
+    '''Prepares a figure and axis for 3D plots.'''
+    orbit_fig = plt.figure()
+    orbit_ax = orbit_fig.add_subplot(111, projection='3d')
+    orbit_ax.view_init(60, -140)
+    orbit_ax.xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+    orbit_ax.yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+    orbit_ax.zaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+    return orbit_fig, orbit_ax
+
+def set_up_plot():
+    '''Sets up a generic 2D plot figure and axis.'''
+    plot_fig = plt.figure()
+    plot_ax = plot_fig.add_subplot(111)
+    return plot_fig, plot_ax
 
 floating_plots = {}
 
