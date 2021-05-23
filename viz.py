@@ -25,6 +25,14 @@ def set_up_plot():
     plot_ax = plot_fig.add_subplot(111)
     return plot_fig, plot_ax
 
+def plot_earth(orbit_ax, earth_rad=6371000):
+    '''Plots a wireframe of the Earth.'''
+    u, v = np.mgrid[0:2*np.pi:20j, 0:np.pi:10j]
+    x = np.cos(u)*np.sin(v) * earth_rad
+    y = np.sin(u)*np.sin(v) * earth_rad
+    z = np.cos(v) * earth_rad
+    orbit_ax.plot_wireframe(x, y, z, colors="gray", linewidths=0.5, alpha=0.4)
+
 floating_plots = {}
 
 def get_floating_plot(name, **params):
