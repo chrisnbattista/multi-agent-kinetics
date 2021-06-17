@@ -17,7 +17,8 @@ def initialize_random_circle(n_particles,
                                 center=None,
                                 min_dist=4,
                                 random_speed=0,
-                                spatial_dims=2):
+                                spatial_dims=2,
+                                mass=1):
     '''
         n_particles:    initial number of particles []
         radius:         initial radius of particle distribution [m]
@@ -52,7 +53,7 @@ def initialize_random_circle(n_particles,
                 else:
                     break
             
-            world_state[i, :] = (0, i, 10, candidate_b_1, vs[0])
+            world_state[i, :] = (0, i, mass, candidate_b_1, vs[0])
 
         elif spatial_dims > 1:
             while smallest_interparticle_distance < min_dist:
@@ -66,6 +67,6 @@ def initialize_random_circle(n_particles,
                 else:
                     break
 
-            world_state[i, :] = (0, i, 10, *test_pos, *vs)
+            world_state[i, :] = (0, i, mass, *test_pos, *vs)
 
     return world_state

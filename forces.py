@@ -55,6 +55,26 @@ def gravity(world, context, attractor=None):
     #         (diff * np.linalg.norm(diff))
     #     )* earth_mass * 9.81 * state[:,worlds.mass[3], None])
 
+def newtons_law_of_gravitation(world, G, context):
+    '''Applies classical gravity between all particles in a world.'''
+    ##G = (6.674*(10**(-11))) # true value
+    state = world.get_state()
+    mass = state[:,worlds.mass[world.spatial_dims]]
+    position = state[:,worlds.pos[world.spatial_dims]]
+    pairwise_distances = scipy.spatial.distance.pdist(position)
+    squared_pairwise_distances = np.square(pairwise_distances)
+    r_squared_mat = scipy.spatial.distance.squareform(squared_pairwise_distances)
+    one_over_r_squared_mat = np.reciprocal(r_squared_mat)
+    one_over_r_squared_mat = np.nan_to_num(one_over_r_squared_mat, posinf=0, neginf=0)
+    m1_m2_over_r_squared_mat = one_over_r_squared_mat * mass * mass[...,None]
+    F_G_mags = G * m1_m2_over_r_squared_mat
+    forces = np.zeros((state.shape[0], world.spatial_dims))
+    for i in range(state.shape[0]):
+        for j in range(state.shape[0]):
+            if i == j: continue
+            forces[i,:] = forces[i,:] + normalize((position[j,:] - position[i,:]).reshape(1,-1)) * F_G_mags[i,j]
+    return forces
+
 def lennard_jones_potential(epsilon, sigma, r):
     return ne.evaluate('( (4 * epsilon * sigma**12)/r**12 - (4 * epsilon * sigma**6)/r**6 )')
 

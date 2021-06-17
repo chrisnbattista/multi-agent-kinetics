@@ -9,7 +9,7 @@ def generate_generic_ic(agent_list):
         initial_state[i, :] = (0, i, *agent_list[i])
     return initial_state
 
-def run_random_circle_lj_sim(params, seed):
+def run_random_circle_sim(params, seed, forces):
     '''
     Sets up a random experiment using the random seed and params and runs it to completion.
     '''
@@ -17,12 +17,15 @@ def run_random_circle_lj_sim(params, seed):
     random.seed(seed)
 
     ## ICs
+    if 'mass' in params: mass = params['mass']
+    else: mass = 1
     initial_state = experiments.initialize_random_circle(
         radius=params['size']/2,
         center=(params['size']/2, params['size']/2),
         n_particles=params['n_agents'],
         min_dist=params['min_dist'],
-        random_speed=params['init_speed'])
+        random_speed=params['init_speed'],
+        mass=mass)
 
     ## Create World object
     world = worlds.World(
@@ -30,9 +33,7 @@ def run_random_circle_lj_sim(params, seed):
         n_agents=params['n_agents'],
         n_timesteps=params['n_timesteps'],
         timestep=params['timestep'],
-        forces=[
-            lambda world, context: forces.pairwise_world_lennard_jones_force(world, epsilon=params['epsilon'], sigma=params['sigma'])
-        ],
+        forces=forces,
         indicators=[
             lambda world: indicators.kinetic_energy(world)
         ]
