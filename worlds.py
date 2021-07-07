@@ -65,20 +65,21 @@ class World:
         self.schema = schemas[str(spatial_dims)+'d']
         self.indicator_schema = indicator_schema
 
+        if (initial_state is not None):
+            self.n_agents = initial_state.shape[0]
+        else:
+            self.n_agents = n_agents
+
         self.n_timesteps = n_timesteps
         if n_timesteps:
             self.fixed_length = True
-            self.history = np.empty( (n_timesteps * n_agents, len(self.schema)))
+            self.history = np.empty( (n_timesteps * self.n_agents, len(self.schema)))
             self.indicator_history = np.empty( (n_timesteps, len(indicators)) )
         else:
             self.fixed_length = False
             self.history = np.empty( (0, len(self.schema)))
             self.indicator_history = np.empty( (0, len(indicators)) )
 
-        if (initial_state is not None):
-            self.n_agents = initial_state.shape[0]
-        else:
-            self.n_agents = n_agents
         self.forces = forces
         self.constraints = constraints
         self.controllers = controllers
@@ -96,7 +97,12 @@ class World:
 
         self.current_timestep = None
         if initial_state is not None:
-            self._add_state_to_history(initial_state)     
+            self._add_state_to_history(initial_state)
+            ## Compute indicators
+            indicator_results = np.empty( (1, len(self.indicators)) )
+            for j in range(len(self.indicators)):
+                indicator_results[0, j] = self.indicators[j](self)
+            self._add_state_to_indicators(indicator_results)
     
     def _add_state_to_history(self, new_state):
         '''
@@ -137,6 +143,18 @@ class World:
             return None
 
         return self.history[(self.current_timestep*self.n_agents) : ((self.current_timestep+1)*self.n_agents), :]
+    
+    def get_state_with_indicators(self):
+        '''
+        Returns a view of the latest entry in the world state history, along with the latest indicators.
+        '''
+        return np.concatenate(
+            (
+                self.get_state(),
+                np.repeat(self.indicator_history[(self.current_timestep), :].reshape(1,-1), self.n_agents, axis=0)
+            ),
+            axis=1
+        )
     
     def get_history(self):
         '''

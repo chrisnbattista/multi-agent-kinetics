@@ -1,16 +1,8 @@
-
-
-
-
-
-
 import numpy as np
-
 import os, glob
 from typing import Dict, Any
 import hashlib
 import json
-
 from . import worlds, forces
 
 def dict_hash(dictionary: Dict[str, Any]) -> str:
@@ -63,7 +55,7 @@ def load_world(filepath):
     )
     history = data[:,:7]
     try:
-        indicator_history = data[:,7:]
+        indicator_history = data[::len(np.unique(history[:,1])),7:]
     except:
         indicator_history = np.empty( (params['n_timesteps'], 0) )
 
@@ -76,12 +68,13 @@ def load_world(filepath):
     )
     world.history = history
     world.indicator_history = indicator_history
-    world.current_timestep = params['n_timesteps'] - 1
+    world.current_timestep = params['n_timesteps'] - 1 
 
     return world, params
 
 def list_worlds(dirpath):
     '''
-    Return all saved worlds in a folder.
+    Recursively return all saved worlds in a folder.
     '''
-    return glob.glob(os.path.join(dirpath, "*.csv"))
+    print(os.path.join(dirpath, "**/*.csv"))
+    return glob.glob(os.path.join(dirpath, "**/*.csv"), recursive=True)
