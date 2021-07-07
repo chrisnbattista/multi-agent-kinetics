@@ -48,13 +48,12 @@ def set_up_figure(title='Plot', plot_type='2d+ind'):
     plt.show()
     sns.set_theme()
     sns.color_palette("dark")
-    # if plot_type == '2d+ind':
-    #     fig, ax = plt.subplots(2,1,
-    #                         gridspec_kw={'height_ratios': [4, 1]},
-    #                         figsize=(6, 7.5)
-    #     )
-    # elif plot_type == '2d_proj_orbit':
-    if plot_type == '3d_plot':
+    if plot_type == '2d+ind':
+        fig, ax = plt.subplots(2,1,
+                            gridspec_kw={'height_ratios': [4, 1]},
+                            figsize=(6, 7.5)
+        )
+    elif plot_type == '3d_plot':
         fig = plt.figure(figsize=(6, 6))
         ax = fig.add_subplot(111,
                             projection='3d'
@@ -72,13 +71,11 @@ def trace_trajectories(world, fig, ax, fig_title=''):
     Performs colored line plots of all particle trajectories in system.
     '''
 
-    ax.clear()
-
     for i in range(world.n_agents):
         sns.scatterplot(
             x=world.history[i::world.n_agents,3],
             y=world.history[i::world.n_agents,4],
-            ax=ax,
+            ax=ax[0],
             ci=None,
             s=5,
             palette="dark"
@@ -91,18 +88,18 @@ def trace_trajectories(world, fig, ax, fig_title=''):
         )'''
 
     try:
-        sns.lineplot(
-                    x=world.history[::100, 0],
-                    y=world.indicator_history[::100, 0],
-                    ax=ax[1],
-                    legend=False
-        )
+        for j in range(world.indicator_history.shape[1]):
+            print(j)
+            sns.lineplot(
+                        x=world.history[world.n_agents::100, 0],
+                        y=world.indicator_history[world.n_agents::100, j],
+                        ax=ax[1],
+                        legend=False
+            )
     except:
         pass
     
     fig.canvas.set_window_title(fig_title)
-    fig.canvas.draw_idle()
-    fig.canvas.start_event_loop(0.01)
 
 def trace_predicted_vs_real_trajectories(y, y_pred, title, fig, ax):
     '''

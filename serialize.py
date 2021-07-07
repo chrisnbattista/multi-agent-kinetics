@@ -46,6 +46,7 @@ def save_world(world, root_path, params, seed):
 
 def load_world(filepath):
     '''
+    ONLY WORKS ON 2D RN
     TO DO: FIX FORCES
     Creates a World object based on a specified file and the params.json in its containing folder.
     '''
@@ -68,7 +69,7 @@ def load_world(filepath):
 
     # Reconstruct simulation
     world = worlds.World(
-        n_agents=params['n_agents'],
+        n_agents=len(np.unique(data[:,1])),
         n_timesteps=params['n_timesteps'],
         timestep=params['timestep'],
         forces=[lambda world: forces.pairwise_world_lennard_jones_force(world, epsilon=params['epsilon'], sigma=params['sigma'])]

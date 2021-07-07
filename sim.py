@@ -43,3 +43,33 @@ def run_random_circle_sim(params, seed, forces, indicators=[], indicator_schema=
     world.advance_state(params['n_timesteps']-1)
     
     return world
+
+def run_two_body_sim(params, seed, forces, indicators=[], indicator_schema=[], noise=lambda x: x):
+    '''Initializes two masses and runs a simulation of their behavior.'''
+
+    random.seed(seed)
+
+    noise = random.random()
+
+    ## ICs=
+    #schema '2d': ('t', 'id', 'm', 'b_1', 'b_2', 'v_1', 'v_2'),
+    initial_state = np.array([
+        [0, 0, params['small_m'], params['separation'], 0, 0, params['tangent_speed'] * noise],
+        [0, 1, params['large_m'], 0, 0, 0, 0]
+    ])
+
+    ## Create World object
+    world = worlds.World(
+        initial_state=initial_state,
+        n_agents=2,
+        n_timesteps=params['n_timesteps'],
+        timestep=params['timestep'],
+        forces=forces,
+        indicators=indicators,
+        indicator_schema=indicator_schema
+    )
+    
+    ## Forward run
+    world.advance_state(params['n_timesteps']-1)
+    
+    return world

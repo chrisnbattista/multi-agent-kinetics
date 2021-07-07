@@ -160,13 +160,15 @@ def viscous_damping_force(world, c, context=None, **kwargs):
     state = world.get_state()
     vel = worlds.vel[world.spatial_dims]
 
-    null_forces = np.zeros((world.n_agents,world.spatial_dims))
-    return np.where(
-        np.c_[world.context['damping_active']],
-        -c * state[:, vel],
-        null_forces
-    )
-
+    if context != None and 'damping_active' in context:
+        null_forces = np.zeros((world.n_agents,world.spatial_dims))
+        return np.where(
+            np.c_[world.context['damping_active']],
+            -c * state[:, vel],
+            null_forces
+        )
+    else:
+        return -c * state[:, vel]
 
 def spline_attractor(world, lamb, target=None, h=1, context=None, **kwargs):
 

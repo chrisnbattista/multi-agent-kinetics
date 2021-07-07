@@ -37,6 +37,6 @@ def gravitational_potential_energy(world, G):
     one_over_r_mat = scipy.spatial.distance.squareform(one_over_r)
     one_over_r_mat = np.nan_to_num(one_over_r_mat, posinf=0, neginf=0)
     m_M_over_r_mat = one_over_r_mat * mass * mass[...,None]
-    pairwise_U = scipy.spatial.distance.squareform(m_M_over_r_mat)
+    pairwise_U = np.sum(np.triu(m_M_over_r_mat))
     U_mat = (-1) * G * pairwise_U
     return np.sum(U_mat)

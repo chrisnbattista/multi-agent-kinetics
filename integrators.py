@@ -25,11 +25,11 @@ def integrate_rect_world(world, state, force_matrix, timestep):
     # v = integral(F) / m
     velocity_matrix = np.divide(
         integrate_rect(timestep, force_matrix),
-        state[:,2,None]
+        state[:,worlds.mass[world.spatial_dims],None]
     )
-    state[:, vel] += velocity_matrix
+    state[:, vel] = state[:, vel] + velocity_matrix
 
     # Displacement from velocity
-    state[:, pos] += integrate_rect(timestep, state[:, vel])
+    state[:, pos] = state[:, pos] + integrate_rect(timestep, state[:, vel])
 
     return state
