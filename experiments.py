@@ -1,16 +1,6 @@
-
-
-
-
-
-
 import numpy as np
 import random, math
 from . import worlds
-
-
-
-
 
 def initialize_random_circle(n_particles,
                                 radius,
@@ -35,6 +25,11 @@ def initialize_random_circle(n_particles,
     # create a random distribution of particles
     for i in range(n_particles):
 
+        try:
+            iter(mass)
+            m_i = mass[i]
+        except TypeError: m_i = mass
+
         smallest_interparticle_distance = 0
 
         vs = []
@@ -53,7 +48,7 @@ def initialize_random_circle(n_particles,
                 else:
                     break
             
-            world_state[i, :] = (0, i, mass, candidate_b_1, vs[0])
+            world_state[i, :] = (0, i, m_i, candidate_b_1, vs[0])
 
         elif spatial_dims > 1:
             while smallest_interparticle_distance < min_dist:
@@ -67,6 +62,6 @@ def initialize_random_circle(n_particles,
                 else:
                     break
 
-            world_state[i, :] = (0, i, mass, *test_pos, *vs)
+            world_state[i, :] = (0, i, m_i, *test_pos, *vs)
 
     return world_state

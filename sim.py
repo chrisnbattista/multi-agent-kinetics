@@ -9,7 +9,7 @@ def generate_generic_ic(agent_list):
         initial_state[i, :] = (0, i, *agent_list[i])
     return initial_state
 
-def run_random_circle_sim(params, seed, forces):
+def run_random_circle_sim(params, seed, forces, indicators=[], indicator_schema=[], noise=None):
     '''
     Sets up a random experiment using the random seed and params and runs it to completion.
     '''
@@ -34,9 +34,9 @@ def run_random_circle_sim(params, seed, forces):
         n_timesteps=params['n_timesteps'],
         timestep=params['timestep'],
         forces=forces,
-        indicators=[
-            lambda world: indicators.kinetic_energy(world)
-        ]
+        indicators=indicators,
+        indicator_schema=indicator_schema,
+        noise=noise
     )
     
     ## Forward run

@@ -34,11 +34,11 @@ def save_world(world, root_path, params, seed):
         os.mkdir(save_dir)
 
     np.savetxt(f"{save_dir}/{seed}.csv",
-        world.get_history(),
+        world.get_full_history_with_indicators(),
         comments='',
         delimiter=',',
         fmt='%10.6f',
-        header=','.join(world.schema) # TODO: + indicator schema
+        header=','.join(list(world.schema) + list(world.indicator_schema))
     )
 
     with open(f"{save_dir}/params.json", 'w') as outfile:
@@ -46,6 +46,7 @@ def save_world(world, root_path, params, seed):
 
 def load_world(filepath):
     '''
+    TO DO: FIX FORCES
     Creates a World object based on a specified file and the params.json in its containing folder.
     '''
 

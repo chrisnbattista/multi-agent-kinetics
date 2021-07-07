@@ -1,40 +1,16 @@
 import numpy as np
 import numexpr as ne
+from . import potentials
+from . decorators import name
 
-def potential_energy(world, potentials):
-    '''
-    Calculates potential energy of a whole particle system.
-    '''
-
-    # Requires a list of all potentials, which are to return scalar
-    # global values
-    V = 0
-
-    for potential in potentials:
-        v = potential(world.get_state())
-        V += v
-
-    return V
-
-def kinetic_energy(world):
-    '''
-    Calculates kinetic energy of a whole particle system.
-    '''
-
-    vel_mags = np.linalg.norm(world.get_state()[:,4:6], axis=1)
-    T = np.sum( ((vel_mags**2) * world.get_state()[:,3] / 2),
-                axis=0)
-
-    return T
-
-def hamiltonian(world, potentials=[]):
+def hamiltonian(world, global_potentials=[]):
     '''
     Calculate Hamiltonian (kinetic and potential energy) of entire particle system.
     '''
 
     return \
-        kinetic_energy(world.get_state()) + \
-        potential_energy(world.get_state(), potentials)
+        potentials.kinetic_energy(world) + \
+        potentials.potential_energy(world, global_potentials)
 
 def mse_trajectories(reference_trajectories, test_trajectories, n_particles):
     '''
@@ -46,10 +22,18 @@ def mse_trajectories(reference_trajectories, test_trajectories, n_particles):
     Output:
     scalar MSE based on row-wise norms
     '''
-
     differences = test_trajectories - reference_trajectories
     norms = np.linalg.norm(differences, axis=1)
     return ne.evaluate('sum(norms**2)') / n_particles
+
+def mse_hamiltonians(world_1, world_2):
+    '''Computes the mean squared loss over the Hamiltonian of two evolving particle systems.'''
+    hamiltonian_idx = world_1.indicator_schema.index("Hamiltonian")
+    hamiltonian_1 = world_1.get_indicator_history()[:,hamiltonian_idx]
+    hamiltonian_2 = world_2.get_indicator_history()[:,hamiltonian_idx]
+    differences = hamiltonian_1 - hamiltonian_2
+    print(differences)
+    return ne.evaluate('sum(differences**2)') / world_1.n_agents
 
 def total_sph_delta_v(world):
     '''

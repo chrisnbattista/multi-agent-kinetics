@@ -55,7 +55,7 @@ def gravity(world, context, attractor=None):
     #         (diff * np.linalg.norm(diff))
     #     )* earth_mass * 9.81 * state[:,worlds.mass[3], None])
 
-def newtons_law_of_gravitation(world, G, context):
+def newtons_law_of_gravitation(world, G, context=None):
     '''Applies classical gravity between all particles in a world.'''
     ##G = (6.674*(10**(-11))) # true value
     state = world.get_state()

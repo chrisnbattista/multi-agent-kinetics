@@ -1,7 +1,7 @@
 ## TO DO: Remove explicit indexes, change to lookups from object schema
 
 import numpy as np
-from . import experiments, integrators
+from . import experiments, integrators, decorators
 
 schemas = {
     '1d': ('t', 'id', 'm', 'b_1', 'v_1'),
@@ -51,7 +51,9 @@ class World:
                 constraints=[],
                 controllers=[],
                 indicators=[],
+                indicator_schema=[],
                 integrator=integrators.integrate_rect_world,
+                noise=None,
                 context=None,
                 **kwargs):
         '''
@@ -61,6 +63,7 @@ class World:
 
         self.spatial_dims = spatial_dims
         self.schema = schemas[str(spatial_dims)+'d']
+        self.indicator_schema = indicator_schema
 
         self.n_timesteps = n_timesteps
         if n_timesteps:
@@ -72,14 +75,17 @@ class World:
             self.history = np.empty( (0, len(self.schema)))
             self.indicator_history = np.empty( (0, len(indicators)) )
 
-        self.n_agents = n_agents
+        if (initial_state is not None):
+            self.n_agents = initial_state.shape[0]
+        else:
+            self.n_agents = n_agents
         self.forces = forces
         self.constraints = constraints
         self.controllers = controllers
 
         self.integrator = integrator
-
         self.indicators = indicators
+        self.noise = noise
 
         self.timestep_length = timestep
 
@@ -181,6 +187,10 @@ class World:
 
             ## Integrate forces over timestep
             self.integrator(self, state, force_matrix, self.timestep_length)
+
+            ## Add noise
+            if self.noise != None:
+                state[pos[self.spatial_dims]] = self.noise(state[pos[self.spatial_dims]])
 
             ## Apply any constraints
             if self.constraints:
