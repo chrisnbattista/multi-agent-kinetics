@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 import os, glob
 from typing import Dict, Any
 import hashlib
@@ -48,20 +49,22 @@ def load_world(filepath):
         params = json.load(infile)
     
     # Get sim data
-    data = np.loadtxt(
-        filepath,
-        delimiter=',',
-        skiprows=1
+    data = torch.tensor(
+        np.loadtxt(
+            filepath,
+            delimiter=',',
+            skiprows=1
+        )
     )
     history = data[:,:7]
     try:
-        indicator_history = data[::len(np.unique(history[:,1])),7:]
+        indicator_history = data[::len(torch.unique(history[:,1])),7:]
     except:
-        indicator_history = np.empty( (params['n_timesteps'], 0) )
+        indicator_history = torch.empty( (params['n_timesteps'], 0) )
 
     # Reconstruct simulation
     world = worlds.World(
-        n_agents=len(np.unique(data[:,1])),
+        n_agents=len(torch.unique(data[:,1])),
         n_timesteps=params['n_timesteps'],
         timestep=params['timestep'],
         forces=[lambda world: forces.pairwise_world_lennard_jones_force(world, epsilon=params['epsilon'], sigma=params['sigma'])]

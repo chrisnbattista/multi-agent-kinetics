@@ -1,5 +1,5 @@
 import numpy as np
-import pandas as pd
+import torch
 from . import worlds
 
 ## Simple scalar integration functions
@@ -23,13 +23,16 @@ def integrate_rect_world(world, state, force_matrix, timestep):
     # Velocity from force
     # F = ma = m * derivative(v)
     # v = integral(F) / m
-    velocity_matrix = np.divide(
+    velocity_matrix = torch.divide(
         integrate_rect(timestep, force_matrix),
         state[:,worlds.mass[world.spatial_dims],None]
     )
-    state[:, vel] = state[:, vel] + velocity_matrix
+    new_vel = state[:, vel] + velocity_matrix
 
     # Displacement from velocity
-    state[:, pos] = state[:, pos] + integrate_rect(timestep, state[:, vel])
+    new_pos = state[:, pos] + integrate_rect(timestep, new_vel)
 
-    return state
+    new_state = state.clone()
+    new_state[:, vel] = new_vel
+    new_state[:, pos] = new_pos
+    return new_state

@@ -89,7 +89,6 @@ def trace_trajectories(world, fig, ax, fig_title=''):
 
     try:
         for j in range(world.indicator_history.shape[1]):
-            print(j)
             sns.lineplot(
                         x=world.history[world.n_agents::100, 0],
                         y=world.indicator_history[world.n_agents::100, j],

@@ -1,10 +1,11 @@
 from . import indicators, experiments, forces, integrators, worlds
 import numpy as np
+import torch
 import time, random
 
 def generate_generic_ic(agent_list):
     '''Generate a worlds.World compatible initial_state based on a list of agent properties lists: mass, position, velocity. only compatible with 3D.'''
-    initial_state = np.zeros((len(agent_list), len(worlds.schemas['3d'])))
+    initial_state = torch.zeros((len(agent_list), len(worlds.schemas['3d'])))
     for i in range(len(agent_list)):
         initial_state[i, :] = (0, i, *agent_list[i])
     return initial_state
@@ -53,7 +54,7 @@ def run_two_body_sim(params, seed, forces, indicators=[], indicator_schema=[], n
 
     ## ICs=
     #schema '2d': ('t', 'id', 'm', 'b_1', 'b_2', 'v_1', 'v_2'),
-    initial_state = np.array([
+    initial_state = torch.tensor([
         [0, 0, params['small_m'], params['separation'], 0, 0, params['tangent_speed'] * noise],
         [0, 1, params['large_m'], 0, 0, 0, 0]
     ])

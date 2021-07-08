@@ -1,7 +1,14 @@
 ## TO DO: Remove explicit indexes, change to lookups from object schema
-
+import torch
 import numpy as np
 from . import experiments, integrators, decorators
+
+def torch_tile(tensor, dim, n):
+    """Tile n times along the dim axis"""
+    if dim == 0:
+        return tensor.unsqueeze(0).transpose(0,1).repeat(1,n,1).view(-1,tensor.shape[1])
+    else:
+        return tensor.unsqueeze(0).transpose(0,1).repeat(1,1,n).view(tensor.shape[0], -1)
 
 schemas = {
     '1d': ('t', 'id', 'm', 'b_1', 'v_1'),
@@ -73,12 +80,12 @@ class World:
         self.n_timesteps = n_timesteps
         if n_timesteps:
             self.fixed_length = True
-            self.history = np.empty( (n_timesteps * self.n_agents, len(self.schema)))
-            self.indicator_history = np.empty( (n_timesteps, len(indicators)) )
+            self.history = torch.empty( (n_timesteps * self.n_agents, len(self.schema)))
+            self.indicator_history = torch.empty( (n_timesteps, len(indicators)) )
         else:
             self.fixed_length = False
-            self.history = np.empty( (0, len(self.schema)))
-            self.indicator_history = np.empty( (0, len(indicators)) )
+            self.history = torch.empty( (0, len(self.schema)))
+            self.indicator_history = torch.empty( (0, len(indicators)) )
 
         self.forces = forces
         self.constraints = constraints
@@ -99,7 +106,7 @@ class World:
         if initial_state is not None:
             self._add_state_to_history(initial_state)
             ## Compute indicators
-            indicator_results = np.empty( (1, len(self.indicators)) )
+            indicator_results = torch.empty( (1, len(self.indicators)) )
             for j in range(len(self.indicators)):
                 indicator_results[0, j] = self.indicators[j](self)
             self._add_state_to_indicators(indicator_results)
@@ -118,19 +125,19 @@ class World:
             self.history[
                 (self.current_timestep*self.n_agents) : (self.current_timestep*self.n_agents + self.n_agents), :] = new_state
         else:
-            self.history = np.concatenate((self.history, new_state), axis=0)
+            self.history = torch.cat((self.history, new_state), axis=0)
         
         return self
     
     def _add_state_to_indicators(self, new_indicators):
         '''
-        Concatenates new_indicators to the indicators timeseries at index self.current_timestep.
+        cats new_indicators to the indicators timeseries at index self.current_timestep.
         '''
 
         if self.fixed_length:
             self.indicator_history[self.current_timestep, :] = new_indicators
         else:
-            self.indicator_history = np.concatenate((self.indicator_history, new_indicators))
+            self.indicator_history = torch.cat((self.indicator_history, new_indicators))
         
         return self
     
@@ -148,10 +155,10 @@ class World:
         '''
         Returns a view of the latest entry in the world state history, along with the latest indicators.
         '''
-        return np.concatenate(
+        return torch.cat(
             (
                 self.get_state(),
-                np.repeat(self.indicator_history[(self.current_timestep), :].reshape(1,-1), self.n_agents, axis=0)
+                torch_tile(self.indicator_history[(self.current_timestep), :].reshape(1,-1), 0, self.n_agents)
             ),
             axis=1
         )
@@ -173,10 +180,10 @@ class World:
         Returns an array representing both state and indicators across entire time span.
         '''
         return \
-            np.concatenate(
+            torch.cat(
                 (
                     self.history,
-                    np.repeat(self.indicator_history, self.n_agents, axis=0)
+                    torch_tile(self.indicator_history, 0, self.n_agents)
                 ),
                 axis=1
             )
@@ -188,11 +195,11 @@ class World:
 
         for i in range(steps):
 
-            state = np.copy(self.get_state()) # state is initially old state
+            state = self.get_state().clone().detach() # state is initially old state
 
             ## Calculate forces
             # Initialize matrix to hold forces keyed to id
-            force_matrix = np.zeros ( (state.shape[0], self.spatial_dims) )
+            force_matrix = torch.zeros( (state.shape[0], self.spatial_dims) )
             # Apply natural forces
             for force in self.forces:
                 force_matrix = force_matrix + force(self, self.context)
@@ -220,7 +227,7 @@ class World:
             self._add_state_to_history(state)
 
             ## Compute indicators
-            indicator_results = np.empty( (1, len(self.indicators)) )
+            indicator_results = torch.empty( (1, len(self.indicators)) )
             for j in range(len(self.indicators)):
                 indicator_results[0, j] = self.indicators[j](self)
             self._add_state_to_indicators(indicator_results)
