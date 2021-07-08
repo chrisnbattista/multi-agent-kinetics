@@ -211,7 +211,7 @@ class World:
             state[:,0] += self.timestep_length
 
             ## Integrate forces over timestep
-            self.integrator(self, state, force_matrix, self.timestep_length)
+            state = self.integrator(self, state, force_matrix, self.timestep_length)
 
             ## Add noise
             if self.noise != None:

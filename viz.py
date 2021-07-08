@@ -71,10 +71,12 @@ def trace_trajectories(world, fig, ax, fig_title=''):
     Performs colored line plots of all particle trajectories in system.
     '''
 
+    full_history = world.get_full_history_with_indicators()
+
     for i in range(world.n_agents):
         sns.scatterplot(
-            x=world.history[i::world.n_agents,3],
-            y=world.history[i::world.n_agents,4],
+            x=full_history[i::world.n_agents,3],
+            y=full_history[i::world.n_agents,4],
             ax=ax[0],
             ci=None,
             s=5,
@@ -88,15 +90,15 @@ def trace_trajectories(world, fig, ax, fig_title=''):
         )'''
 
     try:
-        for j in range(world.indicator_history.shape[1]):
+        for j in range(world.get_indicator_history().shape[1]):
             sns.lineplot(
-                        x=world.history[world.n_agents::100, 0],
-                        y=world.indicator_history[world.n_agents::100, j],
-                        ax=ax[1],
-                        legend=False
+                x=full_history[world.n_agents::100, 0],
+                y=full_history[world.n_agents::100, 7+j],
+                ax=ax[1],
+                legend=False
             )
-    except:
-        pass
+    except Exception as e:
+        print(e)
     
     fig.canvas.set_window_title(fig_title)
 

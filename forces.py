@@ -162,8 +162,8 @@ def viscous_damping_force(world, c, context=None, **kwargs):
     vel = worlds.vel[world.spatial_dims]
 
     if context != None and 'damping_active' in context:
-        null_forces = np.zeros((world.n_agents,world.spatial_dims))
-        return np.where(
+        null_forces = torch.zeros((world.n_agents,world.spatial_dims))
+        return torch.where(
             np.c_[world.context['damping_active']],
             -c * state[:, vel],
             null_forces
