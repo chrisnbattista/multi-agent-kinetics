@@ -80,12 +80,12 @@ class World:
         self.n_timesteps = n_timesteps
         if n_timesteps:
             self.fixed_length = True
-            self.history = torch.empty( (n_timesteps * self.n_agents, len(self.schema)))
-            self.indicator_history = torch.empty( (n_timesteps, len(indicators)) )
+            self.history = torch.empty( (n_timesteps * self.n_agents, len(self.schema)), requires_grad=False)
+            self.indicator_history = torch.empty( (n_timesteps, len(indicators)), requires_grad=False )
         else:
             self.fixed_length = False
             self.history = torch.empty( (0, len(self.schema)))
-            self.indicator_history = torch.empty( (0, len(indicators)) )
+            self.indicator_history = torch.empty( (0, len(indicators)), requires_grad=False )
 
         self.forces = forces
         self.constraints = constraints
@@ -199,7 +199,7 @@ class World:
 
             ## Calculate forces
             # Initialize matrix to hold forces keyed to id
-            force_matrix = torch.zeros( (state.shape[0], self.spatial_dims) )
+            force_matrix = torch.zeros( (state.shape[0], self.spatial_dims), requires_grad=False )
             # Apply natural forces
             for force in self.forces:
                 force_matrix = force_matrix + force(self, self.context)
@@ -227,7 +227,7 @@ class World:
             self._add_state_to_history(state)
 
             ## Compute indicators
-            indicator_results = torch.empty( (1, len(self.indicators)) )
+            indicator_results = torch.empty( (1, len(self.indicators)), requires_grad=False )
             for j in range(len(self.indicators)):
                 indicator_results[0, j] = self.indicators[j](self)
             self._add_state_to_indicators(indicator_results)

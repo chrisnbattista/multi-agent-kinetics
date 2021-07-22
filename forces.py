@@ -62,18 +62,18 @@ def newtons_law_of_gravitation(world, G, context=None):
     state = world.get_state()
     mass = state[:,worlds.mass[world.spatial_dims]]
     position = state[:,worlds.pos[world.spatial_dims]]
-    pairwise_distances = torch.tensor(scipy.spatial.distance.pdist(position))
+    pairwise_distances = torch.tensor(scipy.spatial.distance.pdist(position.detach().numpy()), requires_grad=False)
     squared_pairwise_distances = torch.square(pairwise_distances)
-    r_squared_mat = torch.tensor(scipy.spatial.distance.squareform(squared_pairwise_distances))
+    r_squared_mat = torch.tensor(scipy.spatial.distance.squareform(squared_pairwise_distances), requires_grad=False)
     one_over_r_squared_mat = torch.reciprocal(r_squared_mat)
     one_over_r_squared_mat = torch.nan_to_num(one_over_r_squared_mat, posinf=0, neginf=0)
     m1_m2_over_r_squared_mat = one_over_r_squared_mat * mass * mass[...,None]
-    F_G_mags = G * m1_m2_over_r_squared_mat
+    F_G_mags = (G * m1_m2_over_r_squared_mat).detach()
     forces = torch.zeros((state.shape[0], world.spatial_dims))
     for i in range(state.shape[0]):
         for j in range(state.shape[0]):
             if i == j: continue
-            forces[i,:] = forces[i,:] + torch.tensor(normalize((position[j,:] - position[i,:]).reshape(1,-1))) * F_G_mags[i,j]
+            forces[i,:] = forces[i,:] + torch.tensor(normalize((position[j,:] - position[i,:]).reshape(1,-1)), requires_grad=False) * F_G_mags[i,j]
     return forces
 
 def lennard_jones_potential(epsilon, sigma, r):

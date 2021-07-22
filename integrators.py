@@ -4,12 +4,19 @@ from . import worlds
 
 ## Simple scalar integration functions
 
+## TODO: implement RK4 integration in Python / consider using MATLAB
+
 def integrate_rect(delta_t, initial_value):
     return initial_value * delta_t
 
 def double_integrate_rect(delta_t, initial_value):
     return initial_value * delta_t**2
 
+# def rk4(delta_t, x, x_dot):
+#     k1 = x_dot
+#     k2 = k1*delta_t/2.0
+#     k3 =
+#     k4 = 
 
 ## World level integration functions
 
