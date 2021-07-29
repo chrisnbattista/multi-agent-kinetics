@@ -1,4 +1,5 @@
 two_d_video_images = []
+from multi_agent_kinetics import indicators
 import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -66,7 +67,7 @@ def set_up_figure(title='Plot', plot_type='2d+ind'):
     fig.canvas.set_window_title(title)
     return fig, ax
 
-def trace_trajectories(world, fig, ax, fig_title=''):
+def trace_trajectories(world, fig, ax, fig_title='', indicator_legend=[]):
     '''
     Performs colored line plots of all particle trajectories in system.
     '''
@@ -101,6 +102,8 @@ def trace_trajectories(world, fig, ax, fig_title=''):
         print(e)
     
     fig.canvas.set_window_title(fig_title)
+    if indicator_legend:
+        ax[1].legend(loc='lower left', labels=indicator_legend)
 
 def trace_predicted_vs_real_trajectories(y, y_pred, title, fig, ax):
     '''
