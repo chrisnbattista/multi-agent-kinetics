@@ -179,14 +179,17 @@ class World:
         '''
         Returns an array representing both state and indicators across entire time span.
         '''
-        return \
-            torch.cat(
-                (
-                    self.history,
-                    torch_tile(self.indicator_history, 0, self.n_agents)
-                ),
-                axis=1
-            )
+        if len(self.indicators):
+            return \
+                torch.cat(
+                    (
+                        self.history,
+                        torch_tile(self.indicator_history, 0, self.n_agents)
+                    ),
+                    axis=1
+                )
+        else:
+            return self.history
     
     def advance_state(self, steps=1):
         '''

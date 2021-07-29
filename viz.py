@@ -67,7 +67,7 @@ def set_up_figure(title='Plot', plot_type='2d+ind'):
     fig.canvas.set_window_title(title)
     return fig, ax
 
-def trace_trajectories(world, fig, ax, fig_title='', indicator_legend=[]):
+def trace_trajectories(world, fig, ax, fig_title='', indicator_legend=[], trajectory_legend=[]):
     '''
     Performs colored line plots of all particle trajectories in system.
     '''
@@ -102,6 +102,8 @@ def trace_trajectories(world, fig, ax, fig_title='', indicator_legend=[]):
         print(e)
     
     fig.canvas.set_window_title(fig_title)
+    if trajectory_legend:
+        ax[0].legend(loc='lower left', labels=trajectory_legend)
     if indicator_legend:
         ax[1].legend(loc='lower left', labels=indicator_legend)
 
