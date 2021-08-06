@@ -71,6 +71,7 @@ def load_world(filepath):
     )
     world.history = history
     world.indicator_history = indicator_history
+    world.indicators = data[0,7:]
     world.current_timestep = params['n_timesteps'] - 1 
 
     return world, params
