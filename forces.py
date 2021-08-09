@@ -56,14 +56,14 @@ def gravity(world, context, attractor=None):
     #         (diff * np.linalg.norm(diff))
     #     )* earth_mass * 9.81 * state[:,worlds.mass[3], None])
 
-def newtons_law_of_gravitation(world, G, context=None):
+def newtons_law_of_gravitation(world, G, r=2, context=None):
     '''Applies classical gravity between all particles in a world.'''
     ##G = (6.674*(10**(-11))) # true value
     state = world.get_state()
     mass = state[:,worlds.mass[world.spatial_dims]]
     position = state[:,worlds.pos[world.spatial_dims]]
     pairwise_distances = torch.tensor(scipy.spatial.distance.pdist(position.detach().numpy()), requires_grad=False)
-    squared_pairwise_distances = torch.square(pairwise_distances)
+    squared_pairwise_distances = torch.pow(pairwise_distances, r)
     r_squared_mat = torch.tensor(scipy.spatial.distance.squareform(squared_pairwise_distances), requires_grad=False)
     one_over_r_squared_mat = torch.reciprocal(r_squared_mat)
     one_over_r_squared_mat = torch.nan_to_num(one_over_r_squared_mat, posinf=0, neginf=0)
