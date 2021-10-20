@@ -1,5 +1,5 @@
 two_d_video_images = []
-from multi_agent_kinetics import indicators
+from multi_agent_kinetics import indicators, worlds
 import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -44,6 +44,8 @@ def get_floating_plot(name, **params):
         floating_plots[name].canvas.set_window_title(name)
     return floating_plots[name]
 
+set_up_figure_3d = set_up_3d_plot
+
 def set_up_figure(title='Plot', plot_type='2d+ind'):
     plt.ion()
     plt.show()
@@ -74,32 +76,46 @@ def trace_trajectories(world, fig, ax, fig_title='', indicator_legend=[], trajec
 
     full_history = world.get_full_history_with_indicators()
 
-    for i in range(world.n_agents):
-        sns.scatterplot(
-            x=full_history[i::world.n_agents,3],
-            y=full_history[i::world.n_agents,4],
-            ax=ax[0],
-            ci=None,
-            s=5,
-            palette="dark"
-        )
-        '''sns.scatterplot(
-            x=(world.history[i,1],),
-            y=(world.history[i,2],),
-            ax=ax,
-
-        )'''
-
-    try:
-        for j in range(world.get_indicator_history().shape[1]):
-            sns.lineplot(
-                x=full_history[world.n_agents::100, 0],
-                y=full_history[world.n_agents::100, 7+j],
-                ax=ax[1],
-                legend=False
+    if world.spatial_dims == 2:
+        for i in range(world.n_agents):
+            sns.scatterplot(
+                x=full_history[i::world.n_agents,3],
+                y=full_history[i::world.n_agents,4],
+                ax=ax[0],
+                ci=None,
+                s=5,
+                palette="dark"
             )
-    except Exception as e:
-        print(e)
+            '''sns.scatterplot(
+                x=(world.history[i,1],),
+                y=(world.history[i,2],),
+                ax=ax,
+
+            )'''
+
+        try:
+            for j in range(world.get_indicator_history().shape[1]):
+                sns.lineplot(
+                    x=full_history[world.n_agents::100, 0],
+                    y=full_history[world.n_agents::100, 7+j],
+                    ax=ax[1],
+                    legend=False
+                )
+        except Exception as e:
+            print(e)
+    
+    elif world.spatial_dims == 3:
+        print("ayy")
+        for i in range(world.n_agents):
+            traj = full_history[i::world.n_agents, worlds.pos[world.spatial_dims]]
+            if traj.size()[0] > 1000: step = 100
+            else: step = 1
+            ax.scatter(
+                xs=traj[::step,0],
+                ys=traj[::step,1],
+                zs=traj[::step,2],
+                s=1
+            )
     
     fig.canvas.set_window_title(fig_title)
     if trajectory_legend:

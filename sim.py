@@ -10,7 +10,7 @@ def generate_generic_ic(agent_list):
         initial_state[i, :] = (0, i, *agent_list[i])
     return initial_state
 
-def run_random_circle_sim(params, seed, forces, indicators=[], indicator_schema=[], noise=None):
+def run_random_circle_sim(params, seed, forces, indicators=[], indicator_schema=[], noise=None, spatial_dims=3):
     '''
     Sets up a random experiment using the random seed and params and runs it to completion.
     '''
@@ -20,13 +20,14 @@ def run_random_circle_sim(params, seed, forces, indicators=[], indicator_schema=
     ## ICs
     if 'mass' in params: mass = params['mass']
     else: mass = 1
-    initial_state = experiments.initialize_random_circle(
+    initial_state = experiments.initialize_random_sphere(
         radius=params['size']/2,
-        center=(params['size']/2, params['size']/2),
         n_particles=params['n_agents'],
         min_dist=params['min_dist'],
         random_speed=params['init_speed'],
-        mass=mass)
+        mass=mass,
+        spatial_dims=spatial_dims
+        )
 
     ## Create World object
     world = worlds.World(
@@ -37,7 +38,8 @@ def run_random_circle_sim(params, seed, forces, indicators=[], indicator_schema=
         forces=forces,
         indicators=indicators,
         indicator_schema=indicator_schema,
-        noise=noise
+        noise=noise,
+        spatial_dims=spatial_dims
     )
     
     ## Forward run

@@ -1,7 +1,7 @@
 ## TO DO: Remove explicit indexes, change to lookups from object schema
 import torch
 import numpy as np
-from . import experiments, integrators, decorators
+from . import experiments, integrators
 
 def torch_tile(tensor, dim, n):
     """Tile n times along the dim axis"""
@@ -50,6 +50,12 @@ full_state = [
     slice(0, 5),
     slice(0, 7),
     slice(0, 9)
+]
+indicators = [
+    None,
+    slice(5, None),
+    slice(7, None),
+    slice(9, None)
 ]
 
 class World:
@@ -185,7 +191,7 @@ class World:
         '''
         Returns an array representing both state and indicators across entire time span.
         '''
-        if len(self.indicators):
+        if self.indicator_history.nelement():
             return \
                 torch.cat(
                     (

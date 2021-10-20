@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import torch
 import os, glob
 from typing import Dict, Any
@@ -39,7 +40,6 @@ def save_world(world, root_path, params, seed):
 
 def load_world(filepath):
     '''
-    ONLY WORKS ON 2D RN
     TO DO: FIX FORCES
     Creates a World object based on a specified file and the params.json in its containing folder.
     '''
@@ -49,16 +49,20 @@ def load_world(filepath):
         params = json.load(infile)
     
     # Get sim data
-    data = torch.tensor(
-        np.loadtxt(
-            filepath,
-            delimiter=',',
-            skiprows=1
-        )
+    loaded_file = pd.read_csv(
+        filepath,
+        delimiter=','
     )
-    history = data[:,:7]
+    data = torch.tensor(
+        loaded_file.astype(float).to_numpy()
+    )
+    if 'b_3' in loaded_file.columns:
+        spatial_dims = 3
+    else:
+        spatial_dims = 2
+    history = data[:,worlds.full_state[spatial_dims]]
     try:
-        indicator_history = data[::len(torch.unique(history[:,1])),7:]
+        indicator_history = data[::len(torch.unique(history[:,1])),worlds.indicators[spatial_dims]]
     except:
         indicator_history = torch.empty( (params['n_timesteps'], 0) )
 
@@ -67,11 +71,12 @@ def load_world(filepath):
         n_agents=len(torch.unique(data[:,1])),
         n_timesteps=params['n_timesteps'],
         timestep=params['timestep'],
-        forces=[lambda world: forces.pairwise_world_lennard_jones_force(world, epsilon=params['epsilon'], sigma=params['sigma'])]
+        forces=[lambda world: forces.pairwise_world_lennard_jones_force(world, epsilon=params['epsilon'], sigma=params['sigma'])],
+        spatial_dims=spatial_dims
     )
     world.history = history
     world.indicator_history = indicator_history
-    world.indicators = data[0,7:]
+    world.indicators = data[0,worlds.indicators[spatial_dims]]
     world.current_timestep = params['n_timesteps'] - 1 
 
     return world, params

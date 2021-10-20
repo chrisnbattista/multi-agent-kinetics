@@ -1,7 +1,6 @@
 import numpy as np
 import numexpr as ne
 from . import potentials
-from . decorators import name
 
 def hamiltonian(world, global_potentials=[]):
     '''

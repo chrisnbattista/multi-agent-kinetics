@@ -1,13 +1,14 @@
 import numpy as np
+import torch
 import random, math
 from . import worlds
 
-def initialize_random_circle(n_particles,
+def initialize_random_sphere(n_particles,
                                 radius,
                                 center=None,
                                 min_dist=4,
                                 random_speed=0,
-                                spatial_dims=2,
+                                spatial_dims=3,
                                 mass=1):
     '''
         n_particles:    initial number of particles []
@@ -20,7 +21,7 @@ def initialize_random_circle(n_particles,
         center = np.zeros((spatial_dims,))
 
     ## Set up initial conditions (ICs)
-    world_state = np.empty ( (n_particles, len(schema)) )
+    world_state = torch.empty ( (n_particles, len(schema)) )
 
     # create a random distribution of particles
     for i in range(n_particles):
@@ -48,20 +49,20 @@ def initialize_random_circle(n_particles,
                 else:
                     break
             
-            world_state[i, :] = (0, i, m_i, candidate_b_1, vs[0])
+            world_state[i, :] = torch.tensor((0, i, m_i, candidate_b_1, vs[0]))
 
         elif spatial_dims > 1:
             while smallest_interparticle_distance < min_dist:
-                test_pos = []
+                test_pos = torch.zeros(spatial_dims)
                 for j in range(spatial_dims):
-                    test_pos.append(center[j] + 2*(random.random()-0.5) * radius)
+                    test_pos[j] = center[j] + 2*(random.random()-0.5) * radius
                 offset = world_state[:i, pos] - test_pos
                 norms = np.linalg.norm(offset, axis=1)
                 if i > 0:
                     smallest_interparticle_distance = norms.min()
                 else:
                     break
-
-            world_state[i, :] = (0, i, m_i, *test_pos, *vs)
+            
+            world_state[i, :] = torch.tensor((0, i, m_i, *test_pos, *vs))
 
     return world_state
