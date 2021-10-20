@@ -18,6 +18,9 @@ def set_up_3d_plot():
     orbit_ax.xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
     orbit_ax.yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
     orbit_ax.zaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+    orbit_ax.set_xlabel('x')
+    orbit_ax.set_ylabel('y')
+    orbit_ax.set_zlabel('x')
     return orbit_fig, orbit_ax
 
 def set_up_plot():
@@ -67,14 +70,17 @@ def set_up_figure(title='Plot', plot_type='2d+ind'):
                             figsize=(6, 6)
         )
     fig.canvas.set_window_title(title)
+    ax.set_xlabel('x')
+    ax.set_ylabel('y')
     return fig, ax
 
-def trace_trajectories(world, fig, ax, fig_title='', indicator_legend=[], trajectory_legend=[]):
+def trace_trajectories(world, fig, ax, fig_title='', indicator_legend=[], trajectory_legend=[], fraction=1.0):
     '''
     Performs colored line plots of all particle trajectories in system.
     '''
 
-    full_history = world.get_full_history_with_indicators()
+    full_history = world.get_full_history_with_indicators().detach().numpy()
+    full_history = full_history[0:int(full_history.shape[0]*fraction),:]
 
     if world.spatial_dims == 2:
         for i in range(world.n_agents):
@@ -105,10 +111,9 @@ def trace_trajectories(world, fig, ax, fig_title='', indicator_legend=[], trajec
             print(e)
     
     elif world.spatial_dims == 3:
-        print("ayy")
         for i in range(world.n_agents):
             traj = full_history[i::world.n_agents, worlds.pos[world.spatial_dims]]
-            if traj.size()[0] > 1000: step = 100
+            if traj.shape[0] > 1000: step = 100
             else: step = 1
             ax.scatter(
                 xs=traj[::step,0],
