@@ -28,8 +28,8 @@ def initialize_random_sphere(n_particles,
 
         try:
             iter(mass)
-            m_i = mass[i]
-        except TypeError: m_i = mass
+            m_i = mass[i] * random.random()
+        except TypeError: m_i = mass * random.random()
 
         smallest_interparticle_distance = 0
 
