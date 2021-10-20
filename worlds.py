@@ -45,6 +45,12 @@ mass = [
     2,
     2
 ]
+full_state = [
+    None,
+    slice(0, 5),
+    slice(0, 7),
+    slice(0, 9)
+]
 
 class World:
 
